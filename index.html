@@ -2,361 +2,54 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lógica Flow - Simulador ISO 5807</title>
-    <style>
-        :root {
-            --bg: #1e1e2e; --panel: #2b2b3b; --text: #cdd6f4;
-            --accent: #a6e3a1; --danger: #f38ba8; --warn: #f9e2af;
-        }
-
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; display: flex; height: 100vh; }
-        
-        #sidebar { width: 300px; background: var(--panel); padding: 20px; box-sizing: border-box; border-right: 2px solid #444; z-index: 10; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
-        h3 { margin: 0 0 10px 0; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: #89b4fa; border-bottom: 1px solid #444; padding-bottom: 5px; }
-        
-        button { background: #45475a; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; width: 100%; margin-bottom: 5px; font-weight: bold; transition: 0.2s; }
-        button:hover { background: #585b70; }
-        .btn-exec { background: var(--accent); color: #111; }
-        .btn-exec:hover { background: #94cca0; }
-
-        .memory-box { background: #181825; padding: 10px; border-radius: 6px; font-family: monospace; min-height: 50px; }
-        
-        #canvas { flex: 1; position: relative; background-image: radial-gradient(#444 1px, transparent 1px); background-size: 20px 20px; overflow: hidden; }
-        #svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-        #nodes-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
-
-        /* --- CONTAINER BASE (INVISÍVEL) --- */
-        .node { 
-            position: absolute; width: 150px; min-height: 70px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            cursor: move; user-select: none; font-size: 13px; padding: 10px; box-sizing: border-box;
-            background: transparent; border: none; z-index: 2;
-        }
-
-        /* --- FORMAS GEOMÉTRICAS (VIA PSEUDO-ELEMENTO) --- */
-        .node::before {
-            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: #313244; border: 2px solid #89dceb; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            z-index: -1; transition: 0.2s;
-        }
-        .node.active::before { border-color: var(--accent); box-shadow: 0 0 20px var(--accent); background: #3b4252; }
-        
-        .node input { width: 85%; margin-top: 5px; background: #1e1e2e; color: white; border: 1px solid #555; border-radius: 3px; padding: 4px; text-align: center; font-family: monospace; z-index: 1; }
-        .node b { z-index: 1; pointer-events: none; }
-
-        /* 1. Terminal (Início/Fim): Oval */
-        .node-inicio::before, .node-fim::before { border-radius: 50px; border-color: #eba0ac; }
-        
-        /* 2. Processo: Retângulo */
-        .node-processo::before { border-radius: 4px; border-color: #89b4fa; }
-        
-        /* 3. Entrada/Saída: Paralelogramo */
-        .node-entrada::before, .node-saida::before { 
-            transform: skewX(-15deg); border-radius: 4px; border-color: var(--accent);
-            left: 10px; right: 10px; /* Evita vazar do hit-box */
-        }
-
-        /* 4. Decisão: Losango */
-        .node-decisao { width: 140px; min-height: 140px; } /* Hitbox precisa ser quadrada */
-        .node-decisao::before {
-            width: 100px; height: 100px; top: 50%; left: 50%;
-            transform: translate(-50%, -50%) rotate(45deg); /* Roda 45º */
-            border-color: var(--warn); border-radius: 4px;
-        }
-
-        /* --- SISTEMA DE PORTAS DE CONEXÃO --- */
-        .port { position: absolute; width: 14px; height: 14px; background: #cba6f7; border: 2px solid #111; border-radius: 50%; cursor: crosshair; z-index: 10; transition: 0.2s; }
-        .port:hover { transform: scale(1.5); background: white; }
-        
-        /* Posições relativas ao Hitbox invisível */
-        .port-in { top: -8px; left: calc(50% - 7px); background: #89b4fa; }
-        .port-out { bottom: -8px; left: calc(50% - 7px); }
-        
-        /* Portas laterais específicas do Losango */
-        .node-decisao .port-in { top: 5px; }
-        .node-decisao .port-out-t { top: calc(50% - 7px); left: 5px; background: var(--accent); }
-        .node-decisao .port-out-f { top: calc(50% - 7px); right: 5px; left: auto; background: var(--danger); }
-        .port-label-t { position: absolute; left: 22px; top: calc(50% - 20px); font-size: 11px; font-weight: bold; color: var(--accent); }
-        .port-label-f { position: absolute; right: 22px; top: calc(50% - 20px); font-size: 11px; font-weight: bold; color: var(--danger); }
-
-        #connecting-indicator { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: #f38ba8; color: #111; padding: 5px 15px; border-radius: 20px; font-weight: bold; display: none; z-index: 100; pointer-events: none;}
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lógica Flow - Versão Final</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div id="sidebar">
-        <div>
-            <h3>Símbolos (ISO 5807)</h3>
-            <button onclick="addNode('inicio')">INÍCIO (Terminal)</button>
-            <button onclick="addNode('entrada')">LEIA (Dados)</button>
-            <button onclick="addNode('processo')">ATRIBUIÇÃO (Processo)</button>
-            <button onclick="addNode('decisao')">SE (Decisão)</button>
-            <button onclick="addNode('saida')">ESCREVA (Dados)</button>
-            <button onclick="addNode('fim')">FIM (Terminal)</button>
-        </div>
+    <button id="mobile-menu-btn" onclick="toggleSidebar()">☰ Menu</button>
 
+    <div id="sidebar">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>Ferramentas</h3>
+            <button onclick="toggleSidebar()" style="width:auto; padding:5px 10px; background:transparent; border:1px solid #555; display:none;" class="close-mobile">X</button>
+        </div>
         <div>
-            <h3>Memória Física</h3>
+            <button onclick="addNode('inicio')">INÍCIO</button>
+            <button onclick="addNode('entrada')">LEIA (Entrada)</button>
+            <button onclick="addNode('processo')">ATRIBUIÇÃO (Processo)</button>
+            <button onclick="addNode('decisao')">SE / ENQUANTO (Decisão)</button>
+            <button onclick="addNode('saida')">ESCREVA (Saída)</button>
+            <button onclick="addNode('fim')">FIM</button>
+        </div>
+        <div>
+            <h3>Memória</h3>
             <div id="memory-ui" class="memory-box">Variáveis limpas...</div>
         </div>
-
         <div>
-            <h3>Motor de Execução</h3>
-            <button class="btn-exec" onclick="runStep()">Próximo Passo ➡</button>
-            <button onclick="resetExecution()">Parar / Limpar Estado</button>
+            <h3>Execução</h3>
+            <button id="btn-next" class="btn-exec" onclick="runStep()">Próximo Passo ➡</button>
+            <button onclick="resetExecution()">Parar / Limpar</button>
         </div>
     </div>
 
-    <div id="canvas" onmousemove="canvasMove(event)" onmouseup="canvasUp(event)">
-        <div id="connecting-indicator">Arraste a linha até a porta azul do próximo bloco...</div>
-        <svg id="svg-layer"></svg>
-        <div id="nodes-layer"></div>
+    <div id="camera" onpointermove="canvasMove(event)" onpointerup="canvasUp(event)">
+        <div id="connecting-indicator">Conecte à porta azul...</div>
+        
+        <div id="workspace">
+            <svg id="svg-layer"></svg>
+            <svg id="anim-layer"></svg>
+            <div id="nodes-layer"></div>
+        </div>
     </div>
 
-    <script>
-        let nodes = [];
-        let links = [];
-        let variables = {};
-        
-        let draggedNode = null;
-        let dragOffset = { x: 0, y: 0 };
-        let connectingData = null;
-        let tempLine = null;
-        let currentNode = null;
+    <div id="zoom-controls">
+        <button onclick="changeZoom(-0.1)">-</button>
+        <button onclick="resetZoom()">1x</button>
+        <button onclick="changeZoom(0.1)">+</button>
+    </div>
 
-        const canvas = document.getElementById('canvas');
-        const nodesLayer = document.getElementById('nodes-layer');
-        const svgLayer = document.getElementById('svg-layer');
-        const memoryUI = document.getElementById('memory-ui');
-        const connIndicator = document.getElementById('connecting-indicator');
-
-        function addNode(type) {
-            const id = 'node_' + Date.now();
-            const node = { id, type, x: 300 + Math.random() * 50, y: 100 + Math.random() * 50, data: '' };
-            nodes.push(node);
-            renderNodes();
-            renderSVG();
-        }
-
-        function updateNodeData(id, val) {
-            const node = nodes.find(n => n.id === id);
-            if (node) node.data = val;
-        }
-
-        function renderNodes() {
-            nodesLayer.innerHTML = '';
-            nodes.forEach(node => {
-                const el = document.createElement('div');
-                el.className = `node node-${node.type} ${currentNode === node ? 'active' : ''}`;
-                el.style.left = node.x + 'px';
-                el.style.top = node.y + 'px';
-                el.id = node.id;
-
-                el.onmousedown = (e) => {
-                    if (e.target.tagName === 'INPUT' || e.target.classList.contains('port')) return;
-                    draggedNode = node;
-                    dragOffset = { x: e.clientX - node.x, y: e.clientY - node.y };
-                };
-
-                let html = `<b>${node.type.toUpperCase()}</b>`;
-                let ports = '';
-
-                if (node.type !== 'inicio') {
-                    ports += `<div class="port port-in" data-target-id="${node.id}"></div>`;
-                }
-
-                if (node.type === 'decisao') {
-                    html += `<input placeholder="Ex: x > 5" value="${node.data}" oninput="updateNodeData('${node.id}', this.value)">`;
-                    ports += `
-                        <div class="port port-out-t" onmousedown="startConnect('${node.id}', 'T', event)"></div>
-                        <span class="port-label-t">V</span>
-                        <div class="port port-out-f" onmousedown="startConnect('${node.id}', 'F', event)"></div>
-                        <span class="port-label-f">F</span>
-                    `;
-                } else if (node.type === 'entrada' || node.type === 'saida' || node.type === 'processo') {
-                    let placeholder = node.type === 'processo' ? "Ex: x = x + 1" : "Var: x";
-                    html += `<input placeholder="${placeholder}" value="${node.data}" oninput="updateNodeData('${node.id}', this.value)">`;
-                    ports += `<div class="port port-out" onmousedown="startConnect('${node.id}', 'out', event)"></div>`;
-                } else if (node.type === 'inicio') {
-                    ports += `<div class="port port-out" onmousedown="startConnect('${node.id}', 'out', event)"></div>`;
-                }
-
-                el.innerHTML = html + ports;
-                nodesLayer.appendChild(el);
-            });
-        }
-
-        function startConnect(id, port, e) {
-            e.stopPropagation();
-            connectingData = { fromId: id, port: port };
-            connIndicator.style.display = 'block';
-            tempLine = { x1: 0, y1: 0, x2: 0, y2: 0 };
-        }
-
-        function cancelConnect() {
-            connectingData = null;
-            tempLine = null;
-            connIndicator.style.display = 'none';
-            renderSVG();
-        }
-
-        function getPortCoords(nodeId, portType) {
-            const node = nodes.find(n => n.id === nodeId);
-            if (!node) return {x:0, y:0};
-
-            let px = node.x;
-            let py = node.y;
-            const w = (node.type === 'decisao') ? 140 : 150;
-            const h = (node.type === 'decisao') ? 140 : 70;
-
-            if (portType === 'in') { px += w/2; py += (node.type === 'decisao' ? 12 : 0); }
-            else if (portType === 'out') { px += w/2; py += h; }
-            else if (portType === 'T') { px += 12; py += h/2; } // Esquerda do Losango
-            else if (portType === 'F') { px += w - 12; py += h/2; } // Direita do Losango
-
-            return {x: px, y: py};
-        }
-
-        function canvasMove(e) {
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-
-            if (draggedNode) {
-                draggedNode.x = e.clientX - dragOffset.x;
-                draggedNode.y = e.clientY - dragOffset.y;
-                document.getElementById(draggedNode.id).style.left = draggedNode.x + 'px';
-                document.getElementById(draggedNode.id).style.top = draggedNode.y + 'px';
-                renderSVG();
-            } else if (connectingData) {
-                let p1 = getPortCoords(connectingData.fromId, connectingData.port);
-                tempLine = { x1: p1.x, y1: p1.y, x2: mouseX, y2: mouseY };
-                renderSVG();
-            }
-        }
-
-        function canvasUp(e) {
-            draggedNode = null;
-            if (connectingData) {
-                if (e.target.classList.contains('port-in')) {
-                    const toId = e.target.getAttribute('data-target-id');
-                    if (toId && toId !== connectingData.fromId) {
-                        links = links.filter(l => !(l.from === connectingData.fromId && l.port === connectingData.port));
-                        links.push({ from: connectingData.fromId, port: connectingData.port, to: toId });
-                    }
-                }
-                cancelConnect();
-            }
-        }
-
-        function renderSVG() {
-            let html = '';
-            links.forEach(l => {
-                const n1 = nodes.find(n => n.id === l.from);
-                const n2 = nodes.find(n => n.id === l.to);
-                if (!n1 || !n2) return;
-
-                let p1 = getPortCoords(l.from, l.port);
-                let p2 = getPortCoords(l.to, 'in');
-
-                let color = l.port === 'T' ? 'var(--accent)' : l.port === 'F' ? 'var(--danger)' : '#fff';
-                
-                // Ajuste matemático da Curva Bezier dependendo de onde a seta sai
-                let c1x = p1.x, c1y = p1.y + 40;
-                if (l.port === 'T') { c1x = p1.x - 40; c1y = p1.y; }
-                if (l.port === 'F') { c1x = p1.x + 40; c1y = p1.y; }
-
-                html += `<path d="M ${p1.x} ${p1.y} C ${c1x} ${c1y}, ${p2.x} ${p2.y-40}, ${p2.x} ${p2.y}" stroke="${color}" stroke-width="3" fill="none"/>`;
-                html += `<polygon points="${p2.x-5},${p2.y-8} ${p2.x+5},${p2.y-8} ${p2.x},${p2.y}" fill="${color}"/>`;
-            });
-
-            if (tempLine) {
-                let p1 = getPortCoords(connectingData.fromId, connectingData.port);
-                let c1x = p1.x, c1y = p1.y + 40;
-                if (connectingData.port === 'T') { c1x = p1.x - 40; c1y = p1.y; }
-                if (connectingData.port === 'F') { c1x = p1.x + 40; c1y = p1.y; }
-                html += `<path d="M ${p1.x} ${p1.y} C ${c1x} ${c1y}, ${tempLine.x2} ${tempLine.y2-40}, ${tempLine.x2} ${tempLine.y2}" stroke="#aaa" stroke-width="2" stroke-dasharray="5,5" fill="none"/>`;
-            }
-            svgLayer.innerHTML = html;
-        }
-
-        function evaluateExpr(expr) {
-            let scope = { ...variables };
-            try {
-                const keys = Object.keys(scope);
-                const values = Object.values(scope);
-                const func = new Function(...keys, "return " + expr + ";");
-                return func(...values);
-            } catch (e) {
-                alert(`Erro de Sintaxe: Verifique a expressão "${expr}"`);
-                return null;
-            }
-        }
-
-        function updateMemory() {
-            if (Object.keys(variables).length === 0) { memoryUI.innerHTML = "Variáveis limpas..."; return; }
-            memoryUI.innerHTML = Object.entries(variables).map(([k, v]) => `<div>${k} = <span style="color:var(--accent)">${v}</span></div>`).join('');
-        }
-
-        function resetExecution() { currentNode = null; variables = {}; updateMemory(); renderNodes(); }
-
-        function advance(port) {
-            const link = links.find(l => l.from === currentNode.id && l.port === port);
-            if (link) {
-                currentNode = nodes.find(n => n.id === link.to);
-                renderNodes(); 
-            } else {
-                alert("Fluxo interrompido: Ponto sem conexão de saída.");
-                currentNode = null;
-                renderNodes();
-            }
-        }
-
-        function runStep() {
-            if (!currentNode) {
-                currentNode = nodes.find(n => n.type === 'inicio');
-                if (!currentNode) return alert("Erro: O algoritmo exige um bloco de INÍCIO.");
-                renderNodes();
-                return;
-            }
-
-            switch (currentNode.type) {
-                case 'inicio': advance('out'); break;
-                case 'entrada':
-                    if(!currentNode.data) return alert("Erro: Defina a variável alvo no bloco LEIA.");
-                    let val = prompt(`Console: Aguardando entrada de dados para '${currentNode.data}':`);
-                    if(val !== null) {
-                        variables[currentNode.data.trim()] = Number(val);
-                        updateMemory();
-                        advance('out');
-                    }
-                    break;
-                case 'processo':
-                    let parts = currentNode.data.split('=');
-                    if (parts.length === 2) {
-                        let varName = parts[0].trim();
-                        let result = evaluateExpr(parts[1].trim());
-                        if(result !== null) { variables[varName] = result; updateMemory(); advance('out'); }
-                    } else { alert("Erro: A Atribuição requer o formato 'variavel = expressão'."); }
-                    break;
-                case 'decisao':
-                    let cond = evaluateExpr(currentNode.data);
-                    if(cond !== null) advance(cond ? 'T' : 'F');
-                    break;
-                case 'saida':
-                    let outVal = evaluateExpr(currentNode.data);
-                    alert(`CONSOLE (SAÍDA DE DADOS):\n\n> ${outVal}`);
-                    advance('out');
-                    break;
-                case 'fim':
-                    alert("Execução Finalizada com Sucesso.");
-                    resetExecution();
-                    break;
-            }
-        }
-
-        addNode('inicio');
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>

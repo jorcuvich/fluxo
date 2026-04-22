@@ -1,0 +1,84 @@
+:root {
+    --bg: #1e1e2e; --panel: #2b2b3b; --text: #cdd6f4;
+    --accent: #a6e3a1; --danger: #f38ba8; --warn: #f9e2af;
+    --zoom: 1; 
+}
+
+body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; display: flex; height: 100vh; touch-action: none; }
+
+#sidebar { width: 300px; background: var(--panel); padding: 20px; box-sizing: border-box; border-right: 2px solid #444; z-index: 50; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; transition: 0.3s transform; }
+h3 { margin: 0 0 10px 0; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: #89b4fa; border-bottom: 1px solid #444; padding-bottom: 5px; }
+
+button { background: #45475a; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; margin-bottom: 8px; font-weight: bold; transition: 0.2s; font-size: 14px;}
+button:hover { background: #585b70; }
+.btn-exec { background: var(--accent); color: #111; font-size: 16px; padding: 12px;}
+.btn-exec:hover { background: #94cca0; }
+.btn-exec:disabled { background: #555; color: #888; cursor: not-allowed; }
+
+.memory-box { background: #181825; padding: 10px; border-radius: 6px; font-family: monospace; min-height: 50px; }
+
+#camera { flex: 1; position: relative; overflow: auto; background: var(--bg); touch-action: pan-x pan-y; }
+#workspace { 
+    position: absolute; top: 0; left: 0; width: 5000px; height: 5000px; 
+    background-image: radial-gradient(#444 1px, transparent 1px); background-size: 20px 20px; 
+    transform-origin: top left; transform: scale(var(--zoom));
+}
+
+#svg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+#anim-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
+#nodes-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
+
+#mobile-menu-btn { display: none; position: fixed; top: 15px; left: 15px; z-index: 100; background: var(--panel); border: 2px solid #555; border-radius: 8px; padding: 10px 15px; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
+#zoom-controls { position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px; z-index: 40; background: var(--panel); padding: 5px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
+#zoom-controls button { width: 40px; height: 40px; margin: 0; padding: 0; font-size: 20px; border-radius: 4px;}
+
+/* --- FORMAS ISO 5807 --- */
+.node { 
+    position: absolute; width: 150px; min-height: 70px; 
+    display: flex; flex-direction: column; align-items: center; justify-content: center; 
+    cursor: grab; user-select: none; font-size: 13px; padding: 10px; box-sizing: border-box; z-index: 2;
+    touch-action: none; 
+}
+.node:active { cursor: grabbing; }
+
+.node::before { content: ""; position: absolute; inset: 0; background: #313244; border: 2px solid #89dceb; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: -1; transition: 0.2s; }
+.node.active::before { border-color: var(--accent); box-shadow: 0 0 20px var(--accent); background: #3b4252; }
+
+.node input { width: 85%; margin-top: 5px; background: #1e1e2e; color: white; border: 1px solid #555; border-radius: 3px; padding: 4px; text-align: center; font-family: monospace; z-index: 1; }
+.node b { z-index: 1; pointer-events: none; text-shadow: 1px 1px 2px black;}
+
+.node-inicio::before, .node-fim::before { border-radius: 50px; border-color: #eba0ac; }
+.node-processo::before { border-radius: 4px; border-color: #89b4fa; }
+.node-entrada::before, .node-saida::before { transform: skewX(-15deg); border-radius: 4px; border-color: var(--accent); left: 10px; right: 10px; }
+.node-decisao { width: 140px; min-height: 140px; } 
+.node-decisao::before { width: 100px; height: 100px; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(45deg); border-color: var(--warn); border-radius: 4px; }
+
+/* --- BOTÃO DE EXCLUSÃO --- */
+.btn-delete {
+    position: absolute; top: -8px; right: -8px; width: 22px; height: 22px;
+    background: var(--danger); color: #111; border: 2px solid #111; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: bold; cursor: pointer; z-index: 20;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5); transition: 0.2s;
+}
+.btn-delete:hover { transform: scale(1.2); background: #ff5555; color: white; }
+
+/* --- PORTAS DE CONEXÃO --- */
+.port { position: absolute; width: 16px; height: 16px; background: #cba6f7; border: 2px solid #111; border-radius: 50%; cursor: crosshair; z-index: 10; transition: 0.2s; touch-action: none;}
+.port:hover { transform: scale(1.5); background: white; }
+.port-in { top: -8px; left: calc(50% - 8px); background: #89b4fa; }
+.port-out { bottom: -8px; left: calc(50% - 8px); }
+.node-decisao .port-in { top: 5px; }
+.node-decisao .port-out-t { top: calc(50% - 8px); left: 5px; background: var(--accent); }
+.node-decisao .port-out-f { top: calc(50% - 8px); right: 5px; left: auto; background: var(--danger); }
+.port-label-t { position: absolute; left: 22px; top: calc(50% - 20px); font-size: 11px; font-weight: bold; color: var(--accent); }
+.port-label-f { position: absolute; right: 22px; top: calc(50% - 20px); font-size: 11px; font-weight: bold; color: var(--danger); }
+
+#connecting-indicator { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #f38ba8; color: #111; padding: 8px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 100; pointer-events: none;}
+
+@media (max-width: 768px) {
+    #sidebar { position: fixed; top: 0; left: 0; height: 100%; transform: translateX(-100%); width: 85%; max-width: 350px; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+    #sidebar.open { transform: translateX(0); }
+    #mobile-menu-btn { display: block; }
+    #connecting-indicator { font-size: 12px; width: 80%; text-align: center; }
+}
