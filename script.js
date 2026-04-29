@@ -24,6 +24,67 @@ window.onload = () => {
     camera.scrollTop = 2500 - window.innerHeight / 2;
 };
 
+// --- LIMPAR TELA E GERENCIAR PROJETOS ---
+function limparTela() {
+    if (nodes.length === 0) return;
+    if (confirm("Tem certeza que deseja apagar todo o fluxograma? O progresso não salvo será perdido.")) {
+        nodes = [];
+        links = [];
+        resetExecution(); 
+        renderNodes();
+        renderSVG();
+        
+        // Retorna a câmera para o centro e zera o zoom
+        camera.scrollLeft = 2500 - window.innerWidth / 2;
+        camera.scrollTop = 2500 - window.innerHeight / 2;
+        resetZoom();
+    }
+}
+
+function exportarProjeto() {
+    if (nodes.length === 0) return alert("O projeto está vazio. Adicione blocos antes de salvar.");
+    
+    const projeto = { nodes, links, variables };
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projeto));
+    
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "logica_flow_projeto.json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+}
+
+function importarProjeto(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const projeto = JSON.parse(e.target.result);
+            if (projeto.nodes && Array.isArray(projeto.nodes)) {
+                nodes = projeto.nodes;
+                links = projeto.links || [];
+                variables = projeto.variables || {};
+                
+                resetExecution(); 
+                renderNodes();
+                renderSVG();
+                updateMemory();
+                alert("Projeto carregado com sucesso!");
+            } else {
+                throw new Error("Estrutura do arquivo inválida.");
+            }
+        } catch (err) {
+            alert("Erro ao ler o arquivo: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = ""; 
+}
+
+// --- NAVEGAÇÃO E ZOOM ---
 function changeZoom(delta) {
     currentZoom = Math.max(0.4, Math.min(currentZoom + delta, 2)); 
     document.documentElement.style.setProperty('--zoom', currentZoom);
@@ -49,6 +110,7 @@ function getRealCoords(e) {
     };
 }
 
+// --- GESTÃO DE BLOCOS E EVENTOS ---
 function addNode(type) {
     const id = 'node_' + Date.now();
     const centerRealX = (camera.scrollLeft + camera.clientWidth / 2) / currentZoom;
@@ -68,16 +130,10 @@ function updateNodeData(id, val) {
 
 function deleteNode(id, event) {
     event.stopPropagation(); 
-    
     nodes = nodes.filter(n => n.id !== id);
     links = links.filter(l => l.from !== id && l.to !== id);
-    
-    if (currentNode && currentNode.id === id) {
-        resetExecution();
-    } else {
-        renderNodes();
-        renderSVG();
-    }
+    if (currentNode && currentNode.id === id) resetExecution();
+    else { renderNodes(); renderSVG(); }
 }
 
 function renderNodes() {
@@ -98,28 +154,31 @@ function renderNodes() {
             dragOffset = { x: coords.x - node.x, y: coords.y - node.y };
         };
 
+        let rotulo = node.type.toUpperCase();
+        if(node.type === 'entradamanual') rotulo = "LEIA (Manual)";
+        else if (node.type === 'entrada') rotulo = "LEIA";
+        else if (node.type === 'exibir') rotulo = "EXIBIR";
+        else if (node.type === 'relatorio') rotulo = "RELATÓRIO";
+
         let html = `
             <div class="btn-delete" onpointerdown="deleteNode('${node.id}', event)">✖</div>
-            <b>${node.type.toUpperCase()}</b>
+            <b>${rotulo}</b>
         `;
         
         let ports = '';
-
         if (node.type !== 'inicio') ports += `<div class="port port-in" data-target-id="${node.id}"></div>`;
 
         if (node.type === 'decisao') {
             html += `<input placeholder="Ex: x > 5" value="${node.data}" oninput="updateNodeData('${node.id}', this.value)">`;
             ports += `
-                <div class="port port-out-t" onpointerdown="startConnect('${node.id}', 'T', event)"></div>
-                <span class="port-label-t">V</span>
-                <div class="port port-out-f" onpointerdown="startConnect('${node.id}', 'F', event)"></div>
-                <span class="port-label-f">F</span>
+                <div class="port port-out-t" onpointerdown="startConnect('${node.id}', 'T', event)"></div><span class="port-label-t">V</span>
+                <div class="port port-out-f" onpointerdown="startConnect('${node.id}', 'F', event)"></div><span class="port-label-f">F</span>
             `;
-        } else if (['entrada', 'saida', 'processo'].includes(node.type)) {
-            let placeholder = node.type === 'processo' ? "Ex: x = x + 1" : "Var: x";
+        } else if (['entrada', 'entradamanual', 'saida', 'exibir', 'relatorio', 'processo'].includes(node.type)) {
+            let placeholder = (node.type === 'processo') ? "Ex: x = x + 1" : (['entrada', 'entradamanual'].includes(node.type)) ? "Var: x" : "Ex: x + 10";
             html += `<input placeholder="${placeholder}" value="${node.data}" oninput="updateNodeData('${node.id}', this.value)">`;
             ports += `<div class="port port-out" onpointerdown="startConnect('${node.id}', 'out', event)"></div>`;
-        } else if (node.type === 'inicio') {
+        } else if (node.type === 'inicio' || node.type === 'desvio') {
             ports += `<div class="port port-out" onpointerdown="startConnect('${node.id}', 'out', event)"></div>`;
         }
 
@@ -147,8 +206,8 @@ function getPortCoords(nodeId, portType) {
     if (!node) return {x:0, y:0};
 
     let px = node.x; let py = node.y;
-    const w = (node.type === 'decisao') ? 140 : 150;
-    const h = (node.type === 'decisao') ? 140 : 70;
+    const w = (node.type === 'decisao') ? 140 : (node.type === 'desvio') ? 40 : 150;
+    const h = (node.type === 'decisao') ? 140 : (node.type === 'desvio') ? 40 : 70;
 
     if (portType === 'in') { px += w/2; py += (node.type === 'decisao' ? 12 : 0); }
     else if (portType === 'out') { px += w/2; py += h; }
@@ -193,6 +252,7 @@ function canvasUp(e) {
     }
 }
 
+// --- RENDERIZAÇÃO SVG (MANHATTAN) ---
 function getOrthogonalPath(p1, p2, portType) {
     const offset = 30; 
     let path = `M ${p1.x} ${p1.y} `;
@@ -237,6 +297,7 @@ function renderSVG() {
     svgLayer.innerHTML = html;
 }
 
+// --- INTERPRETADOR LÓGICO ---
 function evaluateExpr(expr) {
     let scope = { ...variables };
     try {
@@ -292,7 +353,6 @@ function advance(port) {
         const len = glow.getTotalLength();
         glow.style.strokeDasharray = len;
         glow.style.strokeDashoffset = len;
-
         glow.getBoundingClientRect(); 
 
         glow.style.transition = "stroke-dashoffset 1s ease-in-out";
@@ -305,13 +365,17 @@ function advance(port) {
 
             currentNode = nodes.find(n => n.id === link.to);
             renderNodes(); 
-            
             isAnimating = false;
             btnNext.disabled = false;
+            
+            if (currentNode.type === 'desvio') {
+                runStep();
+            }
+
         }, 1000); 
 
     } else {
-        alert("Fluxo interrompido: Ponto sem conexão.");
+        alert("Fluxo interrompido: Ponto sem conexão de saída.");
         currentNode = null;
         renderNodes();
     }
@@ -331,9 +395,14 @@ function runStep() {
         case 'inicio': 
             advance('out'); 
             break;
+        case 'desvio':
+            advance('out');
+            break;
         case 'entrada':
+        case 'entradamanual':
             if(!currentNode.data) return alert("Erro: Defina a variável alvo.");
-            let val = prompt(`Console: Entrada de dados para '${currentNode.data}':`);
+            let textType = (currentNode.type === 'entradamanual') ? "Teclado" : "Sistema";
+            let val = prompt(`[${textType}] Aguardando entrada para '${currentNode.data}':`);
             if(val !== null) { variables[currentNode.data.trim()] = Number(val); updateMemory(); advance('out'); }
             break;
         case 'processo':
@@ -348,8 +417,11 @@ function runStep() {
             if(cond !== null) advance(cond ? 'T' : 'F');
             break;
         case 'saida':
+        case 'exibir':
+        case 'relatorio':
             let outVal = evaluateExpr(currentNode.data);
-            alert(`CONSOLE:\n\n> ${outVal}`); advance('out');
+            let prefix = (currentNode.type === 'relatorio') ? "📄 RELATÓRIO IMPRESSO:\n\n" : (currentNode.type === 'exibir') ? "🖥️ TELA:\n\n" : "CONSOLE:\n\n";
+            alert(`${prefix}> ${outVal}`); advance('out');
             break;
         case 'fim':
             alert("Execução Finalizada."); resetExecution(); break;

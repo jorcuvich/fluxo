@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lógica Flow - Versão Final</title>
+    <title>Lógica Flow - Simulador Educacional</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,25 +12,45 @@
 
     <div id="sidebar">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h3>Ferramentas</h3>
+            <h3 style="margin:0;">Componentes</h3>
             <button onclick="toggleSidebar()" style="width:auto; padding:5px 10px; background:transparent; border:1px solid #555; display:none;" class="close-mobile">X</button>
         </div>
-        <div>
-            <button onclick="addNode('inicio')">INÍCIO</button>
-            <button onclick="addNode('entrada')">LEIA (Entrada)</button>
-            <button onclick="addNode('processo')">ATRIBUIÇÃO (Processo)</button>
-            <button onclick="addNode('decisao')">SE / ENQUANTO (Decisão)</button>
-            <button onclick="addNode('saida')">ESCREVA (Saída)</button>
-            <button onclick="addNode('fim')">FIM</button>
+        
+        <div class="ferramentas-grupo">
+            <div class="grupo-titulo">Controle de Fluxo</div>
+            <button class="btn-shape btn-terminal" onclick="addNode('inicio')">INÍCIO</button>
+            <button class="btn-shape btn-terminal" onclick="addNode('fim')">FIM</button>
+            
+            <div class="grupo-titulo">Lógica</div>
+            <button class="btn-shape btn-processo" onclick="addNode('processo')">PROCESSAMENTO</button>
+            <button class="btn-shape btn-decisao" onclick="addNode('decisao')"><span>DECISÃO</span></button>
+            
+            <div class="grupo-titulo">Entrada & Saída</div>
+            <button class="btn-shape btn-io" onclick="addNode('entrada')"><span>E/S GENÉRICA</span></button>
+            <button class="btn-shape btn-entradamanual" onclick="addNode('entradamanual')"><span>TECLADO</span></button>
+            <button class="btn-shape btn-exibir" onclick="addNode('exibir')">TELA</button>
+            <button class="btn-shape btn-relatorio" onclick="addNode('relatorio')">RELATÓRIO</button>
+
+            <div class="grupo-titulo">Roteamento</div>
+            <button class="btn-shape btn-desvio" onclick="addNode('desvio')" title="Ponto de Desvio"></button>
         </div>
+
         <div>
-            <h3>Memória</h3>
+            <h3>Memória RAM</h3>
             <div id="memory-ui" class="memory-box">Variáveis limpas...</div>
         </div>
         <div>
-            <h3>Execução</h3>
+            <h3>Motor de Execução</h3>
             <button id="btn-next" class="btn-exec" onclick="runStep()">Próximo Passo ➡</button>
-            <button onclick="resetExecution()">Parar / Limpar</button>
+            <button class="btn-reset" onclick="resetExecution()">Parar Execução</button>
+        </div>
+
+        <div class="ferramentas-grupo">
+            <div class="grupo-titulo">Projeto</div>
+            <button onclick="limparTela()" style="background: #f38ba8; color: #111; width: 100%; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 8px;">🗑️ Limpar Tela</button>
+            <button onclick="exportarProjeto()" style="background: #585b70; width: 100%; border: none; color: white; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 8px;">💾 Salvar (.json)</button>
+            <label for="upload-file" class="btn-custom-upload">📂 Abrir (.json)</label>
+            <input type="file" id="upload-file" accept=".json" onchange="importarProjeto(event)" style="display:none;">
         </div>
     </div>
 
