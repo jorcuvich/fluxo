@@ -26,10 +26,8 @@
             <button class="btn-shape btn-decisao" onclick="addNode('decisao')"><span>DECISÃO</span></button>
             
             <div class="grupo-titulo">Entrada & Saída</div>
-            <button class="btn-shape btn-io" onclick="addNode('entrada')"><span>E/S GENÉRICA</span></button>
-            <button class="btn-shape btn-entradamanual" onclick="addNode('entradamanual')"><span>TECLADO</span></button>
-            <button class="btn-shape btn-exibir" onclick="addNode('exibir')">TELA</button>
-            <button class="btn-shape btn-relatorio" onclick="addNode('relatorio')">RELATÓRIO</button>
+            <button class="btn-shape btn-entrada" onclick="addNode('entrada')"><span>LEIA (In)</span></button>
+            <button class="btn-shape btn-saida" onclick="addNode('saida')"><span>ESCREVA (Out)</span></button>
 
             <div class="grupo-titulo">Roteamento</div>
             <button class="btn-shape btn-desvio" onclick="addNode('desvio')" title="Ponto de Desvio"></button>
@@ -39,6 +37,12 @@
             <h3>Memória RAM</h3>
             <div id="memory-ui" class="memory-box">Variáveis limpas...</div>
         </div>
+        
+        <div>
+            <h3>Console do Sistema</h3>
+            <div id="console-ui" class="memory-box" style="max-height: 120px; overflow-y: auto; color: #a6adc8;">Aguardando execução...</div>
+        </div>
+
         <div>
             <h3>Motor de Execução</h3>
             <button id="btn-next" class="btn-exec" onclick="runStep()">Próximo Passo ➡</button>
@@ -68,6 +72,27 @@
         <button onclick="changeZoom(-0.1)">-</button>
         <button onclick="resetZoom()">1x</button>
         <button onclick="changeZoom(0.1)">+</button>
+    </div>
+
+    <!-- MODAL DE ENTRADA -->
+    <div id="modal-input" class="modal-overlay">
+        <div class="modal-content">
+            <h4 id="input-label" style="margin-top:0; color: #89b4fa; font-size: 16px;">Entrada de Dados</h4>
+            <input type="text" id="input-value" placeholder="Digite o valor..." autocomplete="off">
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button onclick="cancelInput()" class="btn-reset" style="margin:0;">Cancelar</button>
+                <button onclick="confirmInput()" class="btn-exec" style="margin:0;">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOVO MODAL DE SAÍDA -->
+    <div id="modal-output" class="modal-overlay">
+        <div class="modal-content">
+            <h4 style="margin-top:0; color: var(--accent); font-size: 16px; text-transform: uppercase;">Saída do Sistema</h4>
+            <div id="output-value" style="font-size: 20px; font-weight: bold; color: white; margin: 25px 0; font-family: monospace; word-wrap: break-word;"></div>
+            <button id="btn-close-output" onclick="closeOutput()" class="btn-exec" style="margin:0;">Continuar</button>
+        </div>
     </div>
 
     <script src="script.js"></script>

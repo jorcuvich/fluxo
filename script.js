@@ -10,6 +10,10 @@ let currentNode = null;
 let currentZoom = 1;
 let isAnimating = false;
 
+// Promessas para pausar a execução
+let inputResolver = null;
+let outputResolver = null;
+
 const camera = document.getElementById('camera');
 const workspace = document.getElementById('workspace');
 const nodesLayer = document.getElementById('nodes-layer');
@@ -20,9 +24,67 @@ const connIndicator = document.getElementById('connecting-indicator');
 const btnNext = document.getElementById('btn-next');
 
 window.onload = () => {
-    camera.scrollLeft = 2500 - window.innerWidth / 2;
-    camera.scrollTop = 2500 - window.innerHeight / 2;
+    camera.scrollLeft = 2500 - camera.clientWidth / 2;
+    camera.scrollTop = 2500 - camera.clientHeight / 2;
 };
+
+// --- SISTEMA DE CONSOLE LOG ---
+function logMsg(msg, type='info') {
+    const consoleUI = document.getElementById('console-ui');
+    const color = type === 'error' ? 'var(--danger)' : (type === 'warn' ? 'var(--warn)' : 'var(--accent)');
+    const prefix = type === 'error' ? '✖ ERRO:' : (type === 'warn' ? '⚠ AVISO:' : '▶');
+    
+    consoleUI.innerHTML += `<div style="margin-bottom:6px; border-bottom:1px dashed #444; padding-bottom:6px;"><span style="color:${color}; font-weight:bold;">${prefix}</span> ${msg}</div>`;
+    consoleUI.scrollTop = consoleUI.scrollHeight;
+}
+
+// --- SISTEMA DE MODAL (ENTRADA) ---
+function askInput(varName) {
+    document.getElementById('input-label').innerText = `Valor para '${varName}':`;
+    document.getElementById('modal-input').style.display = 'flex';
+    const inputField = document.getElementById('input-value');
+    inputField.value = '';
+    inputField.focus();
+    return new Promise(resolve => { inputResolver = resolve; });
+}
+
+function confirmInput() {
+    const val = document.getElementById('input-value').value;
+    document.getElementById('modal-input').style.display = 'none';
+    if(inputResolver) inputResolver(val);
+}
+
+function cancelInput() {
+    document.getElementById('modal-input').style.display = 'none';
+    if(inputResolver) inputResolver(null); 
+}
+
+// --- SISTEMA DE MODAL (SAÍDA) ---
+function showOutput(msg) {
+    document.getElementById('output-value').innerText = msg;
+    document.getElementById('modal-output').style.display = 'flex';
+    document.getElementById('btn-close-output').focus(); 
+    return new Promise(resolve => { outputResolver = resolve; });
+}
+
+function closeOutput() {
+    document.getElementById('modal-output').style.display = 'none';
+    if(outputResolver) outputResolver();
+}
+
+// --- CONTROLE UNIVERSAL PELO TECLADO (ENTER) ---
+document.addEventListener('keyup', function(event) {
+    if (event.key === 'Enter') {
+        if (document.getElementById('modal-input').style.display === 'flex') {
+            confirmInput();
+        } else if (document.getElementById('modal-output').style.display === 'flex') {
+            closeOutput();
+        } else if (document.activeElement.tagName !== 'INPUT') {
+            // Só avança o passo se não estiver com o cursor focado dentro de um bloco digitando
+            if (!isAnimating) runStep();
+        }
+    }
+});
 
 // --- LIMPAR TELA E GERENCIAR PROJETOS ---
 function limparTela() {
@@ -34,15 +96,15 @@ function limparTela() {
         renderNodes();
         renderSVG();
         
-        // Retorna a câmera para o centro e zera o zoom
-        camera.scrollLeft = 2500 - window.innerWidth / 2;
-        camera.scrollTop = 2500 - window.innerHeight / 2;
+        camera.scrollLeft = 2500 - camera.clientWidth / 2;
+        camera.scrollTop = 2500 - camera.clientHeight / 2;
         resetZoom();
+        document.getElementById('console-ui').innerHTML = 'Projeto limpo. Aguardando...';
     }
 }
 
 function exportarProjeto() {
-    if (nodes.length === 0) return alert("O projeto está vazio. Adicione blocos antes de salvar.");
+    if (nodes.length === 0) { logMsg("O projeto está vazio. Adicione blocos antes de salvar.", "warn"); return; }
     
     const projeto = { nodes, links, variables };
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projeto));
@@ -72,12 +134,12 @@ function importarProjeto(event) {
                 renderNodes();
                 renderSVG();
                 updateMemory();
-                alert("Projeto carregado com sucesso!");
+                logMsg("Projeto carregado com sucesso!", "info");
             } else {
                 throw new Error("Estrutura do arquivo inválida.");
             }
         } catch (err) {
-            alert("Erro ao ler o arquivo: " + err.message);
+            logMsg("Erro ao ler o arquivo: " + err.message, "error");
         }
     };
     reader.readAsText(file);
@@ -155,10 +217,8 @@ function renderNodes() {
         };
 
         let rotulo = node.type.toUpperCase();
-        if(node.type === 'entradamanual') rotulo = "LEIA (Manual)";
-        else if (node.type === 'entrada') rotulo = "LEIA";
-        else if (node.type === 'exibir') rotulo = "EXIBIR";
-        else if (node.type === 'relatorio') rotulo = "RELATÓRIO";
+        if(node.type === 'entrada') rotulo = "LEIA";
+        else if (node.type === 'saida') rotulo = "ESCREVA";
 
         let html = `
             <div class="btn-delete" onpointerdown="deleteNode('${node.id}', event)">✖</div>
@@ -174,8 +234,8 @@ function renderNodes() {
                 <div class="port port-out-t" onpointerdown="startConnect('${node.id}', 'T', event)"></div><span class="port-label-t">V</span>
                 <div class="port port-out-f" onpointerdown="startConnect('${node.id}', 'F', event)"></div><span class="port-label-f">F</span>
             `;
-        } else if (['entrada', 'entradamanual', 'saida', 'exibir', 'relatorio', 'processo'].includes(node.type)) {
-            let placeholder = (node.type === 'processo') ? "Ex: x = x + 1" : (['entrada', 'entradamanual'].includes(node.type)) ? "Var: x" : "Ex: x + 10";
+        } else if (['entrada', 'saida', 'processo'].includes(node.type)) {
+            let placeholder = (node.type === 'processo') ? "Ex: x = x + 1" : (node.type === 'entrada') ? "Var: x" : "Ex: x + 10";
             html += `<input placeholder="${placeholder}" value="${node.data}" oninput="updateNodeData('${node.id}', this.value)">`;
             ports += `<div class="port port-out" onpointerdown="startConnect('${node.id}', 'out', event)"></div>`;
         } else if (node.type === 'inicio' || node.type === 'desvio') {
@@ -209,7 +269,7 @@ function getPortCoords(nodeId, portType) {
     const w = (node.type === 'decisao') ? 140 : (node.type === 'desvio') ? 40 : 150;
     const h = (node.type === 'decisao') ? 140 : (node.type === 'desvio') ? 40 : 70;
 
-    if (portType === 'in') { px += w/2; py += (node.type === 'decisao' ? 12 : 0); }
+    if (portType === 'in') { px += w/2; }
     else if (portType === 'out') { px += w/2; py += h; }
     else if (portType === 'T') { px += 12; py += h/2; } 
     else if (portType === 'F') { px += w - 12; py += h/2; } 
@@ -306,7 +366,7 @@ function evaluateExpr(expr) {
         const func = new Function(...keys, "return " + expr + ";");
         return func(...values);
     } catch (e) {
-        alert(`Erro de Lógica: Verifique a expressão "${expr}"`);
+        logMsg(`Expressão inválida: "${expr}"`, 'error');
         return null;
     }
 }
@@ -322,6 +382,7 @@ function resetExecution() {
     isAnimating = false;
     btnNext.disabled = false;
     animLayer.innerHTML = ''; 
+    document.getElementById('console-ui').innerHTML = 'Aguardando execução...';
     updateMemory(); 
     renderNodes(); 
 }
@@ -375,18 +436,22 @@ function advance(port) {
         }, 1000); 
 
     } else {
-        alert("Fluxo interrompido: Ponto sem conexão de saída.");
+        logMsg("Fluxo interrompido: Ponto sem conexão de saída.", "warn");
         currentNode = null;
         renderNodes();
     }
 }
 
-function runStep() {
+async function runStep() {
     if (isAnimating) return; 
 
     if (!currentNode) {
         currentNode = nodes.find(n => n.type === 'inicio');
-        if (!currentNode) return alert("Erro: O algoritmo exige um bloco de INÍCIO.");
+        if (!currentNode) {
+            logMsg("O algoritmo exige um bloco de INÍCIO.", "error");
+            return;
+        }
+        logMsg("Execução Iniciada.", "info");
         renderNodes();
         return;
     }
@@ -399,31 +464,50 @@ function runStep() {
             advance('out');
             break;
         case 'entrada':
-        case 'entradamanual':
-            if(!currentNode.data) return alert("Erro: Defina a variável alvo.");
-            let textType = (currentNode.type === 'entradamanual') ? "Teclado" : "Sistema";
-            let val = prompt(`[${textType}] Aguardando entrada para '${currentNode.data}':`);
-            if(val !== null) { variables[currentNode.data.trim()] = Number(val); updateMemory(); advance('out'); }
+            if(!currentNode.data) { logMsg("Erro: Defina a variável alvo (ex: x).", "error"); return; }
+            
+            let val = await askInput(currentNode.data);
+            
+            if(val !== null && val.trim() !== "") { 
+                variables[currentNode.data.trim()] = Number(val); 
+                updateMemory(); 
+                logMsg(`Li variável [${currentNode.data.trim()}] = ${val}`);
+                advance('out'); 
+            } else {
+                logMsg("Entrada cancelada pelo usuário. Execução parada.", "warn");
+                resetExecution();
+            }
             break;
         case 'processo':
             let parts = currentNode.data.split('=');
             if (parts.length === 2) {
                 let varName = parts[0].trim(); let result = evaluateExpr(parts[1].trim());
-                if(result !== null) { variables[varName] = result; updateMemory(); advance('out'); }
-            } else { alert("A Atribuição requer: variavel = expressão."); }
+                if(result !== null) { 
+                    variables[varName] = result; 
+                    updateMemory(); 
+                    logMsg(`Processei [${varName}] = ${result}`);
+                    advance('out'); 
+                }
+            } else { logMsg("Erro de Sintaxe: O Processamento exige 'variavel = expressao'.", "error"); }
             break;
         case 'decisao':
             let cond = evaluateExpr(currentNode.data);
-            if(cond !== null) advance(cond ? 'T' : 'F');
+            if(cond !== null) {
+                logMsg(`Avaliei: [${currentNode.data}] -> ${cond ? 'Verdadeiro' : 'Falso'}`);
+                advance(cond ? 'T' : 'F');
+            }
             break;
         case 'saida':
-        case 'exibir':
-        case 'relatorio':
             let outVal = evaluateExpr(currentNode.data);
-            let prefix = (currentNode.type === 'relatorio') ? "📄 RELATÓRIO IMPRESSO:\n\n" : (currentNode.type === 'exibir') ? "🖥️ TELA:\n\n" : "CONSOLE:\n\n";
-            alert(`${prefix}> ${outVal}`); advance('out');
+            if(outVal !== null) {
+                logMsg(`<b>SAÍDA: ${outVal}</b>`, "info"); 
+                await showOutput(outVal); 
+                advance('out');
+            }
             break;
         case 'fim':
-            alert("Execução Finalizada."); resetExecution(); break;
+            logMsg("Execução Finalizada com Sucesso.", "info"); 
+            resetExecution(); 
+            break;
     }
 }
