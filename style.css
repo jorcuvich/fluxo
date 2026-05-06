@@ -90,8 +90,8 @@ h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #89
 }
 .node.error::before { border-color: var(--danger); background: #3b2a33; animation: errorPulse 0.5s infinite alternate ease-in-out !important; }
 
-/* FONTE E CAIXA DE TEXTO MAIS LEGÍVEIS */
-.node input { width: 85%; margin-top: 5px; background: #1e1e2e; color: white; border: 1px solid #555; border-radius: 3px; padding: 6px 4px; text-align: center; font-family: monospace; font-size: 14px; font-weight: bold; z-index: 1; outline: none;}
+/* FONTE E CAIXA DE TEXTO REATIVAS */
+.node input { min-width: 85%; max-width: 350px; margin-top: 5px; background: #1e1e2e; color: white; border: 1px solid #555; border-radius: 3px; padding: 6px 4px; text-align: center; font-family: monospace; font-size: 14px; font-weight: bold; z-index: 1; outline: none; transition: width 0.1s ease;}
 .node input:focus { border-color: var(--accent); background: #181825;}
 .node b { z-index: 1; pointer-events: none; text-shadow: 1px 1px 2px black;}
 

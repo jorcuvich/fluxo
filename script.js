@@ -31,7 +31,6 @@ window.onload = () => {
     centerCamera(); // Inicializa centrado
 };
 
-// NOVA FUNÇÃO: Resgate visual imediato para quando o aluno perde o código de vista
 function centerCamera() {
     if (nodes.length === 0) {
         camera.scrollLeft = 2500 - camera.clientWidth / 2;
@@ -39,20 +38,15 @@ function centerCamera() {
         return;
     }
     
-    // Procura o INÍCIO ou então foca no primeiro bloco que encontrar
     let targetNode = nodes.find(n => n.type === 'inicio') || nodes[0];
-    
-    // O 75 e 35 compensam o centro exato da forma geométrica
     camera.scrollLeft = (targetNode.x + 75) * currentZoom - (camera.clientWidth / 2);
     camera.scrollTop = (targetNode.y + 35) * currentZoom - (camera.clientHeight / 2);
 }
 
-// --- VALIDACÃO SINTÁTICA DE VARIÁVEL ---
 function isValidVarName(name) {
     return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name);
 }
 
-// --- SISTEMA DE CONSOLE LOG ---
 function logMsg(msg, type='info') {
     const consoleUI = document.getElementById('console-ui');
     const color = type === 'error' ? 'var(--danger)' : (type === 'warn' ? 'var(--warn)' : 'var(--accent)');
@@ -72,7 +66,6 @@ function throwNodeError(node, msg) {
     renderNodes();
 }
 
-// --- SISTEMAS DE MODAL (ENTRADA / SAÍDA) ---
 function askInput(varName) {
     document.getElementById('input-label').innerText = `Valor para '${varName}':`;
     document.getElementById('modal-input').style.display = 'flex';
@@ -117,7 +110,6 @@ document.addEventListener('keyup', function(event) {
     }
 });
 
-// --- LIMPAR TELA E GERENCIAR PROJETOS ---
 function limparTela() {
     if (nodes.length === 0) return;
     if (confirm("Tem certeza que deseja apagar todo o fluxograma? O progresso não salvo será perdido.")) {
@@ -126,7 +118,7 @@ function limparTela() {
         resetExecution(); 
         renderNodes();
         renderSVG();
-        centerCamera(); // Usa a nova função
+        centerCamera(); 
         resetZoom();
         document.getElementById('console-ui').innerHTML = 'Projeto limpo. Aguardando...';
     }
@@ -164,7 +156,7 @@ function importarProjeto(event) {
                 renderSVG();
                 updateMemory();
                 logMsg("Projeto carregado com sucesso!", "info");
-                centerCamera(); // Ajusta a vista para o projeto carregado
+                centerCamera(); 
             } else {
                 throw new Error("Estrutura do arquivo inválida.");
             }
@@ -176,7 +168,6 @@ function importarProjeto(event) {
     event.target.value = ""; 
 }
 
-// --- NAVEGAÇÃO E ZOOM ---
 function changeZoom(delta) {
     currentZoom = Math.max(0.4, Math.min(currentZoom + delta, 2)); 
     document.documentElement.style.setProperty('--zoom', currentZoom);
@@ -202,7 +193,6 @@ function getRealCoords(e) {
     };
 }
 
-// --- GESTÃO DE BLOCOS E EVENTOS ---
 function addNode(type) {
     const id = 'node_' + Date.now();
     const centerRealX = (camera.scrollLeft + camera.clientWidth / 2) / currentZoom;
@@ -268,15 +258,19 @@ function renderNodes() {
         let ports = '';
         if (node.type !== 'inicio') ports += `<div class="port port-in" data-target-id="${node.id}"></div>`;
 
+        // Tratamento da conversão de caracteres de aspas para não quebrar o HTML e expansão dinâmica usando a medida tipográfica 'ch'
+        let safeData = node.data.replace(/"/g, '&quot;');
+        let inputW = Math.max(10, node.data.length + 2);
+
         if (node.type === 'decisao') {
-            html += `<input placeholder="Ex: x > 5" value="${node.data}" oninput="updateNodeData('${node.id}', this.value)">`;
+            html += `<input placeholder="Ex: x > 5" value="${safeData}" style="width: ${inputW}ch" oninput="this.style.width = Math.max(10, this.value.length + 2) + 'ch'; updateNodeData('${node.id}', this.value)">`;
             ports += `
                 <div class="port port-out-t" onpointerdown="startConnect('${node.id}', 'T', event)"></div><span class="port-label-t">V</span>
                 <div class="port port-out-f" onpointerdown="startConnect('${node.id}', 'F', event)"></div><span class="port-label-f">F</span>
             `;
         } else if (['entrada', 'saida', 'processo'].includes(node.type)) {
             let placeholder = (node.type === 'processo') ? "Ex: x = x + 1" : (node.type === 'entrada') ? "Var: x" : "Ex: x + 10";
-            html += `<input placeholder="${placeholder}" value="${node.data}" oninput="updateNodeData('${node.id}', this.value)">`;
+            html += `<input placeholder="${placeholder}" value="${safeData}" style="width: ${inputW}ch" oninput="this.style.width = Math.max(10, this.value.length + 2) + 'ch'; updateNodeData('${node.id}', this.value)">`;
             ports += `<div class="port port-out" onpointerdown="startConnect('${node.id}', 'out', event)"></div>`;
         } else if (node.type === 'inicio' || node.type === 'desvio') {
             ports += `<div class="port port-out" onpointerdown="startConnect('${node.id}', 'out', event)"></div>`;
@@ -362,7 +356,6 @@ function canvasUp(e) {
     }
 }
 
-// --- RENDERIZAÇÃO SVG (MANHATTAN) ---
 function getOrthogonalPath(p1, p2, portType) {
     const offset = 30; 
     let path = `M ${p1.x} ${p1.y} `;
@@ -407,7 +400,6 @@ function renderSVG() {
     svgLayer.innerHTML = html;
 }
 
-// --- INTERPRETADOR LÓGICO BLINDADO ---
 function evaluateExpr(expr) {
     let scope = { ...variables };
     let safeExpr = expr.replace(/(\d),(\d)/g, '$1.$2');
@@ -444,7 +436,6 @@ function updateMemory(updatedVar = null) {
 
 function resetExecution() { 
     currentNode = null; 
-    // variables = {}; // Removido daqui para não apagar o estado histórico de imediato
     isAnimating = false;
     autoRun = false;
     btnNext.disabled = false;
@@ -518,7 +509,6 @@ function advance(port) {
         }, speed); 
 
     } else {
-        // NOVO: Barreira para Blocos de Decisão com saídas desconectadas
         if (currentNode && currentNode.type === 'decisao') {
             let portName = port === 'T' ? 'VERDADEIRO (V)' : 'FALSO (F)';
             throwNodeError(currentNode, `A saída ${portName} desta decisão precisa de estar conectada a algum bloco.`);
@@ -540,9 +530,6 @@ async function runStep() {
 
     if (!currentNode) {
         document.getElementById('console-ui').innerHTML = ''; 
-        
-        // NOVO: A limpeza de RAM acontece agora APENAS no exato arranque, 
-        // purgando memórias fantasmas e evitando problemas de estado.
         variables = {};
         updateMemory();
         
@@ -640,7 +627,6 @@ async function runStep() {
                 await showOutput(outVal); 
                 advance('out');
             } catch (err) { 
-                // NOVO: Interceptação rigorosa que sugere aspas para texto no ESCREVA
                 if (!currentNode.data.includes('"') && !currentNode.data.includes("'")) {
                     throwNodeError(currentNode, `Erro: Se quer escrever um texto exato, coloque as palavras entre aspas (ex: "${currentNode.data}"). Caso contrário, o sistema procura por uma variável com esse nome.`);
                 } else {
@@ -654,3 +640,12 @@ async function runStep() {
             break;
     }
 }
+
+// --- GUARDA-COSTAS DE SESSÃO (Prevenção de Perda de Dados) ---
+window.addEventListener('beforeunload', function (e) {
+    if (nodes.length > 0) {
+        const msg = 'Tem a certeza de que pretende sair? O seu projeto não foi guardado.';
+        e.returnValue = msg;
+        return msg;
+    }
+});
