@@ -110,7 +110,6 @@ h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #89
 .port-in { top: -8px; left: calc(50% - 8px); background: #89b4fa; }
 .port-out { bottom: -8px; left: calc(50% - 8px); }
 
-/* AQUI: Corrigida a altura da porta de entrada da Decisão para o topo do losango */
 .node-decisao .port-in { top: -8px; }
 .node-decisao .port-out-t { top: calc(50% - 8px); left: 5px; background: var(--accent); }
 .node-decisao .port-out-f { top: calc(50% - 8px); right: 5px; left: auto; background: var(--danger); }

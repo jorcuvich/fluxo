@@ -18,16 +18,16 @@
         
         <div class="ferramentas-grupo">
             <div class="grupo-titulo">Controle de Fluxo</div>
-            <button class="btn-shape btn-terminal" onclick="addNode('inicio')">INÍCIO</button>
-            <button class="btn-shape btn-terminal" onclick="addNode('fim')">FIM</button>
+            <button class="btn-shape btn-terminal" onclick="addNode('inicio')">▶ INÍCIO</button>
+            <button class="btn-shape btn-terminal" onclick="addNode('fim')">⏹ FIM</button>
             
             <div class="grupo-titulo">Lógica</div>
-            <button class="btn-shape btn-processo" onclick="addNode('processo')">PROCESSAMENTO</button>
-            <button class="btn-shape btn-decisao" onclick="addNode('decisao')"><span>DECISÃO</span></button>
+            <button class="btn-shape btn-processo" onclick="addNode('processo')">⚙️ PROCESSO</button>
+            <button class="btn-shape btn-decisao" onclick="addNode('decisao')"><span>❓ DECISÃO</span></button>
             
             <div class="grupo-titulo">Entrada & Saída</div>
-            <button class="btn-shape btn-entrada" onclick="addNode('entrada')"><span>LEIA (In)</span></button>
-            <button class="btn-shape btn-saida" onclick="addNode('saida')"><span>ESCREVA (Out)</span></button>
+            <button class="btn-shape btn-entrada" onclick="addNode('entrada')"><span>⌨️ LEIA (In)</span></button>
+            <button class="btn-shape btn-saida" onclick="addNode('saida')"><span>🖥️ ESCREVA (Out)</span></button>
 
             <div class="grupo-titulo">Roteamento</div>
             <button class="btn-shape btn-desvio" onclick="addNode('desvio')" title="Ponto de Desvio"></button>
@@ -45,7 +45,20 @@
 
         <div>
             <h3>Motor de Execução</h3>
-            <button id="btn-next" class="btn-exec" onclick="runStep()">Próximo Passo ➡</button>
+            
+            <!-- ACELERADOR DE VELOCIDADE -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <label style="font-size: 12px; color: #a6adc8; font-weight: bold;">Velocidade:</label>
+                <select id="sim-speed" style="background: #1e1e2e; color: white; border: 1px solid #555; padding: 4px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; outline: none;">
+                    <option value="1000">1x (Normal)</option>
+                    <option value="500">2x (Rápido)</option>
+                    <option value="100">10x (Turbo)</option>
+                    <option value="10">MAX (Raio)</option>
+                </select>
+            </div>
+
+            <button id="btn-run-all" class="btn-exec" onclick="startAutoRun()" style="background: #89b4fa; margin-bottom: 8px;">▶ Executar Tudo</button>
+            <button id="btn-next" class="btn-exec" onclick="runStep()">Passo a Passo ➡</button>
             <button class="btn-reset" onclick="resetExecution()">Parar Execução</button>
         </div>
 
@@ -86,7 +99,7 @@
         </div>
     </div>
 
-    <!-- NOVO MODAL DE SAÍDA -->
+    <!-- MODAL DE SAÍDA -->
     <div id="modal-output" class="modal-overlay">
         <div class="modal-content">
             <h4 style="margin-top:0; color: var(--accent); font-size: 16px; text-transform: uppercase;">Saída do Sistema</h4>

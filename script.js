@@ -10,7 +10,8 @@ let currentNode = null;
 let currentZoom = 1;
 let isAnimating = false;
 
-// Promessas para pausar a execução
+// Controle de Execução
+let autoRun = false;
 let inputResolver = null;
 let outputResolver = null;
 
@@ -22,6 +23,7 @@ const animLayer = document.getElementById('anim-layer');
 const memoryUI = document.getElementById('memory-ui');
 const connIndicator = document.getElementById('connecting-indicator');
 const btnNext = document.getElementById('btn-next');
+const btnRunAll = document.getElementById('btn-run-all');
 
 window.onload = () => {
     camera.scrollLeft = 2500 - camera.clientWidth / 2;
@@ -80,8 +82,7 @@ document.addEventListener('keyup', function(event) {
         } else if (document.getElementById('modal-output').style.display === 'flex') {
             closeOutput();
         } else if (document.activeElement.tagName !== 'INPUT') {
-            // Só avança o passo se não estiver com o cursor focado dentro de um bloco digitando
-            if (!isAnimating) runStep();
+            if (!isAnimating && !autoRun) runStep();
         }
     }
 });
@@ -216,9 +217,14 @@ function renderNodes() {
             dragOffset = { x: coords.x - node.x, y: coords.y - node.y };
         };
 
+        // Rótulos Iconográficos Universais
         let rotulo = node.type.toUpperCase();
-        if(node.type === 'entrada') rotulo = "LEIA";
-        else if (node.type === 'saida') rotulo = "ESCREVA";
+        if(node.type === 'inicio') rotulo = "▶ INÍCIO";
+        else if(node.type === 'fim') rotulo = "⏹ FIM";
+        else if(node.type === 'entrada') rotulo = "⌨️ LEIA";
+        else if(node.type === 'saida') rotulo = "🖥️ ESCREVA";
+        else if(node.type === 'processo') rotulo = "⚙️ PROCESSO";
+        else if(node.type === 'decisao') rotulo = "❓ DECISÃO";
 
         let html = `
             <div class="btn-delete" onpointerdown="deleteNode('${node.id}', event)">✖</div>
@@ -360,10 +366,17 @@ function renderSVG() {
 // --- INTERPRETADOR LÓGICO ---
 function evaluateExpr(expr) {
     let scope = { ...variables };
+    
+    // Tratamento invisível da vírgula decimal brasileira (ex: 2,5 vira 2.5)
+    let safeExpr = expr.replace(/(\d),(\d)/g, '$1.$2');
+    
+    // Tratamento invisível do expoente (ex: 3 ^ 2 vira 3 ** 2)
+    safeExpr = safeExpr.replace(/\^/g, '**');
+    
     try {
         const keys = Object.keys(scope);
         const values = Object.values(scope);
-        const func = new Function(...keys, "return " + expr + ";");
+        const func = new Function(...keys, "return " + safeExpr + ";");
         return func(...values);
     } catch (e) {
         logMsg(`Expressão inválida: "${expr}"`, 'error');
@@ -373,18 +386,28 @@ function evaluateExpr(expr) {
 
 function updateMemory() {
     if (Object.keys(variables).length === 0) { memoryUI.innerHTML = "Variáveis limpas..."; return; }
-    memoryUI.innerHTML = Object.entries(variables).map(([k, v]) => `<div>${k} = <span style="color:var(--accent)">${v}</span></div>`).join('');
+    memoryUI.innerHTML = Object.entries(variables).map(([k, v]) => {
+        let displayVal = typeof v === 'string' ? `"${v}"` : v;
+        return `<div>${k} = <span style="color:var(--accent)">${displayVal}</span></div>`;
+    }).join('');
 }
 
 function resetExecution() { 
     currentNode = null; 
     variables = {}; 
     isAnimating = false;
+    autoRun = false;
     btnNext.disabled = false;
+    btnRunAll.disabled = false;
     animLayer.innerHTML = ''; 
-    document.getElementById('console-ui').innerHTML = 'Aguardando execução...';
+    // Console NÃO é mais limpo aqui para não apagar o histórico de erros ou finais de execução
     updateMemory(); 
     renderNodes(); 
+}
+
+function startAutoRun() {
+    autoRun = true;
+    runStep();
 }
 
 function advance(port) {
@@ -393,6 +416,9 @@ function advance(port) {
     if (link) {
         isAnimating = true;
         btnNext.disabled = true; 
+        btnRunAll.disabled = true;
+
+        const speed = parseInt(document.getElementById('sim-speed').value) || 1000;
 
         let p1 = getPortCoords(link.from, link.port);
         let p2 = getPortCoords(link.to, 'in');
@@ -416,28 +442,32 @@ function advance(port) {
         glow.style.strokeDashoffset = len;
         glow.getBoundingClientRect(); 
 
-        glow.style.transition = "stroke-dashoffset 1s ease-in-out";
+        glow.style.transition = `stroke-dashoffset ${speed / 1000}s ease-in-out`;
         glow.style.strokeDashoffset = "0";
 
         setTimeout(() => {
-            glow.style.transition = "opacity 0.3s ease";
+            glow.style.transition = `opacity ${Math.min(0.2, speed / 2000)}s ease`;
             glow.style.opacity = "0";
-            setTimeout(() => glow.remove(), 300);
+            setTimeout(() => glow.remove(), 200);
 
             currentNode = nodes.find(n => n.id === link.to);
             renderNodes(); 
             isAnimating = false;
             btnNext.disabled = false;
+            btnRunAll.disabled = false;
             
             if (currentNode.type === 'desvio') {
                 runStep();
+            } else if (autoRun && currentNode) {
+                runStep();
             }
 
-        }, 1000); 
+        }, speed); 
 
     } else {
         logMsg("Fluxo interrompido: Ponto sem conexão de saída.", "warn");
         currentNode = null;
+        autoRun = false;
         renderNodes();
     }
 }
@@ -446,13 +476,18 @@ async function runStep() {
     if (isAnimating) return; 
 
     if (!currentNode) {
+        // Limpa o console APENAS no momento em que uma nova execução é solicitada do zero
+        document.getElementById('console-ui').innerHTML = ''; 
+        
         currentNode = nodes.find(n => n.type === 'inicio');
         if (!currentNode) {
             logMsg("O algoritmo exige um bloco de INÍCIO.", "error");
+            autoRun = false;
             return;
         }
-        logMsg("Execução Iniciada.", "info");
+        logMsg(autoRun ? "Execução Contínua Iniciada." : "Execução Iniciada.", "info");
         renderNodes();
+        if(autoRun) advance('out'); 
         return;
     }
 
@@ -464,12 +499,14 @@ async function runStep() {
             advance('out');
             break;
         case 'entrada':
-            if(!currentNode.data) { logMsg("Erro: Defina a variável alvo (ex: x).", "error"); return; }
+            if(!currentNode.data) { logMsg("Erro: Defina a variável alvo (ex: x).", "error"); autoRun = false; return; }
             
             let val = await askInput(currentNode.data);
             
             if(val !== null && val.trim() !== "") { 
-                variables[currentNode.data.trim()] = Number(val); 
+                let numVal = Number(val);
+                variables[currentNode.data.trim()] = isNaN(numVal) ? val : numVal; 
+                
                 updateMemory(); 
                 logMsg(`Li variável [${currentNode.data.trim()}] = ${val}`);
                 advance('out'); 
@@ -487,15 +524,24 @@ async function runStep() {
                     updateMemory(); 
                     logMsg(`Processei [${varName}] = ${result}`);
                     advance('out'); 
-                }
-            } else { logMsg("Erro de Sintaxe: O Processamento exige 'variavel = expressao'.", "error"); }
+                } else { autoRun = false; }
+            } else { logMsg("Erro de Sintaxe: O Processamento exige 'variavel = expressao'.", "error"); autoRun = false;}
             break;
         case 'decisao':
+            // Barreira Pedagógica
+            let tempExpr = currentNode.data.replace(/==|!=|>=|<=/g, '');
+            if (tempExpr.includes('=')) {
+                logMsg(`Erro: "${currentNode.data}" não é uma sentença que é possível verificar se é ou não verdadeira. Para comparar valores, use "==".`, 'error');
+                autoRun = false;
+                resetExecution();
+                return;
+            }
+
             let cond = evaluateExpr(currentNode.data);
             if(cond !== null) {
                 logMsg(`Avaliei: [${currentNode.data}] -> ${cond ? 'Verdadeiro' : 'Falso'}`);
                 advance(cond ? 'T' : 'F');
-            }
+            } else { autoRun = false; }
             break;
         case 'saida':
             let outVal = evaluateExpr(currentNode.data);
@@ -503,7 +549,7 @@ async function runStep() {
                 logMsg(`<b>SAÍDA: ${outVal}</b>`, "info"); 
                 await showOutput(outVal); 
                 advance('out');
-            }
+            } else { autoRun = false; }
             break;
         case 'fim':
             logMsg("Execução Finalizada com Sucesso.", "info"); 
