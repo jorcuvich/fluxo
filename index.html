@@ -18,7 +18,6 @@
         
         <div class="ferramentas-grupo">
             <div class="grupo-titulo">Controle de Fluxo</div>
-            <!-- ID adicionado ao botão INÍCIO para a trava inteligente -->
             <button id="btn-add-inicio" class="btn-shape btn-terminal" onclick="addNode('inicio')">▶ INÍCIO</button>
             <button class="btn-shape btn-terminal" onclick="addNode('fim')">⏹ FIM</button>
             
@@ -47,14 +46,18 @@
         <div>
             <h3>Motor de Execução</h3>
             
+            <!-- Controle de Velocidade e NOVO CONTADOR DE PASSOS -->
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                <label style="font-size: 12px; color: #a6adc8; font-weight: bold;">Velocidade:</label>
-                <select id="sim-speed" style="background: #1e1e2e; color: white; border: 1px solid #555; padding: 4px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; outline: none;">
-                    <option value="1000">1x (Normal)</option>
-                    <option value="500">2x (Rápido)</option>
-                    <option value="100">10x (Turbo)</option>
-                    <option value="10">MAX (Raio)</option>
-                </select>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <label style="font-size: 12px; color: #a6adc8; font-weight: bold;">Velocidade:</label>
+                    <select id="sim-speed" style="background: #1e1e2e; color: white; border: 1px solid #555; padding: 4px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; outline: none;">
+                        <option value="1000">1x (Normal)</option>
+                        <option value="500">2x (Rápido)</option>
+                        <option value="100">10x (Turbo)</option>
+                        <option value="10">MAX (Raio)</option>
+                    </select>
+                </div>
+                <span id="step-counter" style="font-size: 11px; color: #f9e2af; font-weight: bold; background: #181825; padding: 4px 8px; border-radius: 4px; border: 1px solid #444;">Passos: 0</span>
             </div>
 
             <button id="btn-run-all" class="btn-exec" onclick="startAutoRun()" style="background: #89b4fa; margin-bottom: 8px;">▶ Executar Tudo</button>
@@ -87,7 +90,6 @@
         <button onclick="changeZoom(0.1)">+</button>
     </div>
 
-    <!-- MODAL DE ENTRADA -->
     <div id="modal-input" class="modal-overlay">
         <div class="modal-content">
             <h4 id="input-label" style="margin-top:0; color: #89b4fa; font-size: 16px;">Entrada de Dados</h4>
@@ -99,7 +101,6 @@
         </div>
     </div>
 
-    <!-- MODAL DE SAÍDA -->
     <div id="modal-output" class="modal-overlay">
         <div class="modal-content">
             <h4 style="margin-top:0; color: var(--accent); font-size: 16px; text-transform: uppercase;">Saída do Sistema</h4>

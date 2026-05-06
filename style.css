@@ -22,6 +22,13 @@ h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #89
 
 .memory-box { background: #181825; padding: 10px; border-radius: 6px; font-family: monospace; min-height: 50px; font-size: 13px;}
 
+/* NOVO: FEEDBACK VISUAL DE RAM MUTÁVEL */
+@keyframes flashRAM {
+    0% { background-color: rgba(166, 227, 161, 0.4); color: white; }
+    100% { background-color: transparent; }
+}
+.ram-updated { animation: flashRAM 0.8s ease-out; border-radius: 4px; }
+
 /* --- BOTÕES GEOMÉTRICOS DA SIDEBAR --- */
 .btn-shape { 
     position: relative; margin: 8px auto; display: flex; align-items: center; justify-content: center; 
@@ -76,13 +83,12 @@ h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #89
 }
 .node.active::before { border-color: var(--accent); background: #3b4252; animation: continuousGlow 1.2s infinite alternate ease-in-out; }
 
-/* NOVO: FEEDBACK VISUAL DE ERRO (GLOW VERMELHO) */
+/* FEEDBACK VISUAL DE ERRO (GLOW VERMELHO) */
 @keyframes errorPulse {
     0% { box-shadow: 0 0 10px var(--danger); border-color: var(--danger); }
     100% { box-shadow: 0 0 40px var(--danger), inset 0 0 15px rgba(243, 139, 168, 0.4); border-color: #fff;}
 }
 .node.error::before { border-color: var(--danger); background: #3b2a33; animation: errorPulse 0.5s infinite alternate ease-in-out !important; }
-
 
 /* FONTE E CAIXA DE TEXTO MAIS LEGÍVEIS */
 .node input { width: 85%; margin-top: 5px; background: #1e1e2e; color: white; border: 1px solid #555; border-radius: 3px; padding: 6px 4px; text-align: center; font-family: monospace; font-size: 14px; font-weight: bold; z-index: 1; outline: none;}

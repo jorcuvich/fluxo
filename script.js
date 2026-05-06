@@ -7,12 +7,13 @@ let dragOffset = { x: 0, y: 0 };
 let connectingData = null;
 let tempLine = null;
 let currentNode = null;
-let errorNodeId = null; // Variável de Rastreamento de Erro Visual
+let errorNodeId = null; 
 let currentZoom = 1;
 let isAnimating = false;
 
-// Controle de Execução
+// Controle de Execução e Telemetria
 let autoRun = false;
+let stepCount = 0;
 let inputResolver = null;
 let outputResolver = null;
 
@@ -31,6 +32,12 @@ window.onload = () => {
     camera.scrollTop = 2500 - camera.clientHeight / 2;
 };
 
+// --- VALIDACÃO SINTÁTICA DE VARIÁVEL ---
+function isValidVarName(name) {
+    // Proíbe espaços, caracteres especiais e não deixa começar por número
+    return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name);
+}
+
 // --- SISTEMA DE CONSOLE LOG ---
 function logMsg(msg, type='info') {
     const consoleUI = document.getElementById('console-ui');
@@ -41,7 +48,6 @@ function logMsg(msg, type='info') {
     consoleUI.scrollTop = consoleUI.scrollHeight;
 }
 
-// Lança erro visual no Bloco Problemático
 function throwNodeError(node, msg) {
     errorNodeId = node.id;
     logMsg(msg, "error");
@@ -52,7 +58,7 @@ function throwNodeError(node, msg) {
     renderNodes();
 }
 
-// --- SISTEMA DE MODAL (ENTRADA) ---
+// --- SISTEMAS DE MODAL (ENTRADA / SAÍDA) ---
 function askInput(varName) {
     document.getElementById('input-label').innerText = `Valor para '${varName}':`;
     document.getElementById('modal-input').style.display = 'flex';
@@ -73,7 +79,6 @@ function cancelInput() {
     if(inputResolver) inputResolver(null); 
 }
 
-// --- SISTEMA DE MODAL (SAÍDA) ---
 function showOutput(msg) {
     document.getElementById('output-value').innerText = msg;
     document.getElementById('modal-output').style.display = 'flex';
@@ -86,7 +91,6 @@ function closeOutput() {
     if(outputResolver) outputResolver();
 }
 
-// --- CONTROLE UNIVERSAL PELO TECLADO (ENTER) ---
 document.addEventListener('keyup', function(event) {
     if (event.key === 'Enter') {
         if (document.getElementById('modal-input').style.display === 'flex') {
@@ -201,7 +205,7 @@ function addNode(type) {
 function updateNodeData(id, val) {
     const node = nodes.find(n => n.id === id);
     if (node) node.data = val;
-    if (errorNodeId === id) { errorNodeId = null; renderNodes(); } // Limpa o erro se o aluno consertar o texto
+    if (errorNodeId === id) { errorNodeId = null; renderNodes(); } 
 }
 
 function deleteNode(id, event) {
@@ -217,7 +221,6 @@ function renderNodes() {
     nodes.forEach(node => {
         const el = document.createElement('div');
         
-        // Aplica as classes dinâmicas (Ativo ou Erro)
         let classes = `node node-${node.type}`;
         if (currentNode === node) classes += ' active';
         if (errorNodeId === node.id) classes += ' error';
@@ -236,7 +239,6 @@ function renderNodes() {
             dragOffset = { x: coords.x - node.x, y: coords.y - node.y };
         };
 
-        // Rótulos Iconográficos Universais
         let rotulo = node.type.toUpperCase();
         if(node.type === 'inicio') rotulo = "▶ INÍCIO";
         else if(node.type === 'fim') rotulo = "⏹ FIM";
@@ -271,7 +273,6 @@ function renderNodes() {
         nodesLayer.appendChild(el);
     });
 
-    // TRAVA DO BLOCO INÍCIO
     const btnInicio = document.getElementById('btn-add-inicio');
     if (btnInicio) {
         const hasStart = nodes.some(n => n.type === 'inicio');
@@ -342,7 +343,6 @@ function canvasUp(e) {
                 links.push({ from: connectingData.fromId, port: connectingData.port, to: toId });
             }
         } else {
-            // LÓGICA DE EXCLUSÃO DE SETA: Se soltar no vazio, apaga a ligação que sai daquela porta
             links = links.filter(l => !(l.from === connectingData.fromId && l.port === connectingData.port));
         }
         cancelConnect();
@@ -419,11 +419,14 @@ function evaluateExpr(expr) {
     }
 }
 
-function updateMemory() {
+// NOVA FUNÇÃO: Recebe qual variável acabou de mudar para piscar a linha correspondente
+function updateMemory(updatedVar = null) {
     if (Object.keys(variables).length === 0) { memoryUI.innerHTML = "Variáveis limpas..."; return; }
+    
     memoryUI.innerHTML = Object.entries(variables).map(([k, v]) => {
         let displayVal = typeof v === 'string' ? `"${v}"` : v;
-        return `<div>${k} = <span style="color:var(--accent)">${displayVal}</span></div>`;
+        let highlight = (k === updatedVar) ? 'class="ram-updated"' : '';
+        return `<div ${highlight} style="padding: 2px 4px; margin-bottom: 2px;">${k} = <span style="color:var(--accent)">${displayVal}</span></div>`;
     }).join('');
 }
 
@@ -434,6 +437,11 @@ function resetExecution() {
     autoRun = false;
     btnNext.disabled = false;
     btnRunAll.disabled = false;
+    
+    // Zera o Odômetro
+    stepCount = 0;
+    document.getElementById('step-counter').innerText = `Passos: ${stepCount}`;
+    
     animLayer.innerHTML = ''; 
     updateMemory(); 
     renderNodes(); 
@@ -507,7 +515,7 @@ function advance(port) {
 }
 
 async function runStep() {
-    errorNodeId = null; // Limpa erros antigos ao tentar rodar novamente
+    errorNodeId = null; 
     if (isAnimating) return; 
 
     if (!currentNode) {
@@ -519,10 +527,18 @@ async function runStep() {
             autoRun = false;
             return;
         }
+        
+        stepCount = 0;
+        document.getElementById('step-counter').innerText = `Passos: 0`;
+        
         logMsg(autoRun ? "Execução Contínua Iniciada." : "Execução Iniciada.", "info");
         renderNodes();
         if(autoRun) advance('out'); 
         return;
+    } else {
+        // Incrementa e atualiza o odômetro visual de loop
+        stepCount++;
+        document.getElementById('step-counter').innerText = `Passos: ${stepCount}`;
     }
 
     switch (currentNode.type) {
@@ -533,16 +549,23 @@ async function runStep() {
             advance('out');
             break;
         case 'entrada':
-            if(!currentNode.data) { throwNodeError(currentNode, "Defina a variável alvo (ex: x)."); return; }
+            let inVarName = currentNode.data.trim();
+            if (!inVarName) { throwNodeError(currentNode, "Defina a variável alvo (ex: x)."); return; }
             
-            let val = await askInput(currentNode.data);
+            // Barreira Pedagógica de Nomenclatura
+            if (!isValidVarName(inVarName)) {
+                throwNodeError(currentNode, `O nome da variável '${inVarName}' é inválido. Regras: Sem espaços, não comece com números e evite caracteres especiais.`);
+                return;
+            }
+            
+            let val = await askInput(inVarName);
             
             if(val !== null && val.trim() !== "") { 
                 let numVal = Number(val);
-                variables[currentNode.data.trim()] = isNaN(numVal) ? val : numVal; 
+                variables[inVarName] = isNaN(numVal) ? val : numVal; 
                 
-                updateMemory(); 
-                logMsg(`Li variável [${currentNode.data.trim()}] = ${val}`);
+                updateMemory(inVarName); 
+                logMsg(`Li variável [${inVarName}] = ${val}`);
                 advance('out'); 
             } else {
                 logMsg("Entrada cancelada pelo usuário. Execução parada.", "warn");
@@ -552,12 +575,19 @@ async function runStep() {
         case 'processo':
             let parts = currentNode.data.split('=');
             if (parts.length === 2) {
-                let varName = parts[0].trim(); 
+                let procVarName = parts[0].trim(); 
+                
+                // Barreira Pedagógica de Nomenclatura
+                if (!isValidVarName(procVarName)) {
+                    throwNodeError(currentNode, `O nome da variável '${procVarName}' à esquerda do '=' é inválido.`);
+                    return;
+                }
+                
                 try {
                     let result = evaluateExpr(parts[1].trim());
-                    variables[varName] = result; 
-                    updateMemory(); 
-                    logMsg(`Processei [${varName}] = ${result}`);
+                    variables[procVarName] = result; 
+                    updateMemory(procVarName); 
+                    logMsg(`Processei [${procVarName}] = ${result}`);
                     advance('out'); 
                 } catch (err) {
                     throwNodeError(currentNode, err.message);
