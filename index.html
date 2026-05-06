@@ -46,7 +46,6 @@
         <div>
             <h3>Motor de Execução</h3>
             
-            <!-- Controle de Velocidade e NOVO CONTADOR DE PASSOS -->
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
                 <div style="display: flex; align-items: center; gap: 5px;">
                     <label style="font-size: 12px; color: #a6adc8; font-weight: bold;">Velocidade:</label>
@@ -75,7 +74,7 @@
     </div>
 
     <div id="camera" onpointermove="canvasMove(event)" onpointerup="canvasUp(event)">
-        <div id="connecting-indicator">Conecte à porta azul...</div>
+        <div id="connecting-indicator">Ligue à porta azul...</div>
         
         <div id="workspace">
             <svg id="svg-layer"></svg>
@@ -88,6 +87,7 @@
         <button onclick="changeZoom(-0.1)">-</button>
         <button onclick="resetZoom()">1x</button>
         <button onclick="changeZoom(0.1)">+</button>
+        <button onclick="centerCamera()" title="Centrar no Código" style="background: #89b4fa; color: #111; border-left: 2px solid #111;">🎯</button>
     </div>
 
     <div id="modal-input" class="modal-overlay">

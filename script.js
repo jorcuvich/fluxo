@@ -28,13 +28,27 @@ const btnNext = document.getElementById('btn-next');
 const btnRunAll = document.getElementById('btn-run-all');
 
 window.onload = () => {
-    camera.scrollLeft = 2500 - camera.clientWidth / 2;
-    camera.scrollTop = 2500 - camera.clientHeight / 2;
+    centerCamera(); // Inicializa centrado
 };
+
+// NOVA FUNÇÃO: Resgate visual imediato para quando o aluno perde o código de vista
+function centerCamera() {
+    if (nodes.length === 0) {
+        camera.scrollLeft = 2500 - camera.clientWidth / 2;
+        camera.scrollTop = 2500 - camera.clientHeight / 2;
+        return;
+    }
+    
+    // Procura o INÍCIO ou então foca no primeiro bloco que encontrar
+    let targetNode = nodes.find(n => n.type === 'inicio') || nodes[0];
+    
+    // O 75 e 35 compensam o centro exato da forma geométrica
+    camera.scrollLeft = (targetNode.x + 75) * currentZoom - (camera.clientWidth / 2);
+    camera.scrollTop = (targetNode.y + 35) * currentZoom - (camera.clientHeight / 2);
+}
 
 // --- VALIDACÃO SINTÁTICA DE VARIÁVEL ---
 function isValidVarName(name) {
-    // Proíbe espaços, caracteres especiais e não deixa começar por número
     return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name);
 }
 
@@ -112,9 +126,7 @@ function limparTela() {
         resetExecution(); 
         renderNodes();
         renderSVG();
-        
-        camera.scrollLeft = 2500 - camera.clientWidth / 2;
-        camera.scrollTop = 2500 - camera.clientHeight / 2;
+        centerCamera(); // Usa a nova função
         resetZoom();
         document.getElementById('console-ui').innerHTML = 'Projeto limpo. Aguardando...';
     }
@@ -152,6 +164,7 @@ function importarProjeto(event) {
                 renderSVG();
                 updateMemory();
                 logMsg("Projeto carregado com sucesso!", "info");
+                centerCamera(); // Ajusta a vista para o projeto carregado
             } else {
                 throw new Error("Estrutura do arquivo inválida.");
             }
@@ -419,7 +432,6 @@ function evaluateExpr(expr) {
     }
 }
 
-// NOVA FUNÇÃO: Recebe qual variável acabou de mudar para piscar a linha correspondente
 function updateMemory(updatedVar = null) {
     if (Object.keys(variables).length === 0) { memoryUI.innerHTML = "Variáveis limpas..."; return; }
     
@@ -432,13 +444,12 @@ function updateMemory(updatedVar = null) {
 
 function resetExecution() { 
     currentNode = null; 
-    variables = {}; 
+    // variables = {}; // Removido daqui para não apagar o estado histórico de imediato
     isAnimating = false;
     autoRun = false;
     btnNext.disabled = false;
     btnRunAll.disabled = false;
     
-    // Zera o Odômetro
     stepCount = 0;
     document.getElementById('step-counter').innerText = `Passos: ${stepCount}`;
     
@@ -507,7 +518,16 @@ function advance(port) {
         }, speed); 
 
     } else {
-        logMsg("Fluxo interrompido: Ponto sem conexão de saída.", "warn");
+        // NOVO: Barreira para Blocos de Decisão com saídas desconectadas
+        if (currentNode && currentNode.type === 'decisao') {
+            let portName = port === 'T' ? 'VERDADEIRO (V)' : 'FALSO (F)';
+            throwNodeError(currentNode, `A saída ${portName} desta decisão precisa de estar conectada a algum bloco.`);
+        } else if (currentNode && currentNode.type !== 'fim') {
+            throwNodeError(currentNode, "Fluxo interrompido: Ponto sem conexão de saída.");
+        } else {
+            logMsg("Fluxo interrompido: Ponto sem conexão de saída.", "warn");
+        }
+        
         currentNode = null;
         autoRun = false;
         renderNodes();
@@ -520,6 +540,11 @@ async function runStep() {
 
     if (!currentNode) {
         document.getElementById('console-ui').innerHTML = ''; 
+        
+        // NOVO: A limpeza de RAM acontece agora APENAS no exato arranque, 
+        // purgando memórias fantasmas e evitando problemas de estado.
+        variables = {};
+        updateMemory();
         
         currentNode = nodes.find(n => n.type === 'inicio');
         if (!currentNode) {
@@ -536,7 +561,6 @@ async function runStep() {
         if(autoRun) advance('out'); 
         return;
     } else {
-        // Incrementa e atualiza o odômetro visual de loop
         stepCount++;
         document.getElementById('step-counter').innerText = `Passos: ${stepCount}`;
     }
@@ -552,7 +576,6 @@ async function runStep() {
             let inVarName = currentNode.data.trim();
             if (!inVarName) { throwNodeError(currentNode, "Defina a variável alvo (ex: x)."); return; }
             
-            // Barreira Pedagógica de Nomenclatura
             if (!isValidVarName(inVarName)) {
                 throwNodeError(currentNode, `O nome da variável '${inVarName}' é inválido. Regras: Sem espaços, não comece com números e evite caracteres especiais.`);
                 return;
@@ -568,7 +591,7 @@ async function runStep() {
                 logMsg(`Li variável [${inVarName}] = ${val}`);
                 advance('out'); 
             } else {
-                logMsg("Entrada cancelada pelo usuário. Execução parada.", "warn");
+                logMsg("Entrada cancelada pelo utilizador. Execução parada.", "warn");
                 resetExecution();
             }
             break;
@@ -577,7 +600,6 @@ async function runStep() {
             if (parts.length === 2) {
                 let procVarName = parts[0].trim(); 
                 
-                // Barreira Pedagógica de Nomenclatura
                 if (!isValidVarName(procVarName)) {
                     throwNodeError(currentNode, `O nome da variável '${procVarName}' à esquerda do '=' é inválido.`);
                     return;
@@ -618,7 +640,12 @@ async function runStep() {
                 await showOutput(outVal); 
                 advance('out');
             } catch (err) { 
-                throwNodeError(currentNode, err.message); 
+                // NOVO: Interceptação rigorosa que sugere aspas para texto no ESCREVA
+                if (!currentNode.data.includes('"') && !currentNode.data.includes("'")) {
+                    throwNodeError(currentNode, `Erro: Se quer escrever um texto exato, coloque as palavras entre aspas (ex: "${currentNode.data}"). Caso contrário, o sistema procura por uma variável com esse nome.`);
+                } else {
+                    throwNodeError(currentNode, err.message); 
+                }
             }
             break;
         case 'fim':

@@ -22,7 +22,7 @@ h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #89
 
 .memory-box { background: #181825; padding: 10px; border-radius: 6px; font-family: monospace; min-height: 50px; font-size: 13px;}
 
-/* NOVO: FEEDBACK VISUAL DE RAM MUTÁVEL */
+/* FEEDBACK VISUAL DE RAM MUTÁVEL */
 @keyframes flashRAM {
     0% { background-color: rgba(166, 227, 161, 0.4); color: white; }
     100% { background-color: transparent; }
