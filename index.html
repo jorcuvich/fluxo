@@ -18,7 +18,8 @@
         
         <div class="ferramentas-grupo">
             <div class="grupo-titulo">Controle de Fluxo</div>
-            <button class="btn-shape btn-terminal" onclick="addNode('inicio')">▶ INÍCIO</button>
+            <!-- ID adicionado ao botão INÍCIO para a trava inteligente -->
+            <button id="btn-add-inicio" class="btn-shape btn-terminal" onclick="addNode('inicio')">▶ INÍCIO</button>
             <button class="btn-shape btn-terminal" onclick="addNode('fim')">⏹ FIM</button>
             
             <div class="grupo-titulo">Lógica</div>
@@ -46,7 +47,6 @@
         <div>
             <h3>Motor de Execução</h3>
             
-            <!-- ACELERADOR DE VELOCIDADE -->
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
                 <label style="font-size: 12px; color: #a6adc8; font-weight: bold;">Velocidade:</label>
                 <select id="sim-speed" style="background: #1e1e2e; color: white; border: 1px solid #555; padding: 4px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; outline: none;">

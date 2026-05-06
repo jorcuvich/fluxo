@@ -7,6 +7,7 @@ let dragOffset = { x: 0, y: 0 };
 let connectingData = null;
 let tempLine = null;
 let currentNode = null;
+let errorNodeId = null; // Variável de Rastreamento de Erro Visual
 let currentZoom = 1;
 let isAnimating = false;
 
@@ -38,6 +39,17 @@ function logMsg(msg, type='info') {
     
     consoleUI.innerHTML += `<div style="margin-bottom:6px; border-bottom:1px dashed #444; padding-bottom:6px;"><span style="color:${color}; font-weight:bold;">${prefix}</span> ${msg}</div>`;
     consoleUI.scrollTop = consoleUI.scrollHeight;
+}
+
+// Lança erro visual no Bloco Problemático
+function throwNodeError(node, msg) {
+    errorNodeId = node.id;
+    logMsg(msg, "error");
+    autoRun = false;
+    isAnimating = false;
+    btnNext.disabled = false;
+    btnRunAll.disabled = false;
+    renderNodes();
 }
 
 // --- SISTEMA DE MODAL (ENTRADA) ---
@@ -189,6 +201,7 @@ function addNode(type) {
 function updateNodeData(id, val) {
     const node = nodes.find(n => n.id === id);
     if (node) node.data = val;
+    if (errorNodeId === id) { errorNodeId = null; renderNodes(); } // Limpa o erro se o aluno consertar o texto
 }
 
 function deleteNode(id, event) {
@@ -203,7 +216,13 @@ function renderNodes() {
     nodesLayer.innerHTML = '';
     nodes.forEach(node => {
         const el = document.createElement('div');
-        el.className = `node node-${node.type} ${currentNode === node ? 'active' : ''}`;
+        
+        // Aplica as classes dinâmicas (Ativo ou Erro)
+        let classes = `node node-${node.type}`;
+        if (currentNode === node) classes += ' active';
+        if (errorNodeId === node.id) classes += ' error';
+        el.className = classes;
+        
         el.style.left = node.x + 'px';
         el.style.top = node.y + 'px';
         el.id = node.id;
@@ -251,6 +270,15 @@ function renderNodes() {
         el.innerHTML = html + ports;
         nodesLayer.appendChild(el);
     });
+
+    // TRAVA DO BLOCO INÍCIO
+    const btnInicio = document.getElementById('btn-add-inicio');
+    if (btnInicio) {
+        const hasStart = nodes.some(n => n.type === 'inicio');
+        btnInicio.disabled = hasStart;
+        btnInicio.style.opacity = hasStart ? '0.4' : '1';
+        btnInicio.style.cursor = hasStart ? 'not-allowed' : 'pointer';
+    }
 }
 
 function startConnect(id, port, e) {
@@ -313,6 +341,9 @@ function canvasUp(e) {
                 links = links.filter(l => !(l.from === connectingData.fromId && l.port === connectingData.port));
                 links.push({ from: connectingData.fromId, port: connectingData.port, to: toId });
             }
+        } else {
+            // LÓGICA DE EXCLUSÃO DE SETA: Se soltar no vazio, apaga a ligação que sai daquela porta
+            links = links.filter(l => !(l.from === connectingData.fromId && l.port === connectingData.port));
         }
         cancelConnect();
     }
@@ -363,24 +394,28 @@ function renderSVG() {
     svgLayer.innerHTML = html;
 }
 
-// --- INTERPRETADOR LÓGICO ---
+// --- INTERPRETADOR LÓGICO BLINDADO ---
 function evaluateExpr(expr) {
     let scope = { ...variables };
-    
-    // Tratamento invisível da vírgula decimal brasileira (ex: 2,5 vira 2.5)
     let safeExpr = expr.replace(/(\d),(\d)/g, '$1.$2');
-    
-    // Tratamento invisível do expoente (ex: 3 ^ 2 vira 3 ** 2)
     safeExpr = safeExpr.replace(/\^/g, '**');
     
     try {
         const keys = Object.keys(scope);
         const values = Object.values(scope);
         const func = new Function(...keys, "return " + safeExpr + ";");
-        return func(...values);
+        let result = func(...values);
+        
+        if (typeof result === 'number' && isNaN(result)) throw new Error("NaN");
+        if (result === undefined) throw new Error("Undefined");
+        
+        return result;
     } catch (e) {
-        logMsg(`Expressão inválida: "${expr}"`, 'error');
-        return null;
+        if (e instanceof ReferenceError) {
+            let missing = e.message.split(' ')[0]; 
+            throw new Error(`A variável '${missing}' não possui valor (não foi inicializada).`);
+        }
+        throw new Error(`Expressão matemática/lógica inválida.`);
     }
 }
 
@@ -400,7 +435,6 @@ function resetExecution() {
     btnNext.disabled = false;
     btnRunAll.disabled = false;
     animLayer.innerHTML = ''; 
-    // Console NÃO é mais limpo aqui para não apagar o histórico de erros ou finais de execução
     updateMemory(); 
     renderNodes(); 
 }
@@ -473,10 +507,10 @@ function advance(port) {
 }
 
 async function runStep() {
+    errorNodeId = null; // Limpa erros antigos ao tentar rodar novamente
     if (isAnimating) return; 
 
     if (!currentNode) {
-        // Limpa o console APENAS no momento em que uma nova execução é solicitada do zero
         document.getElementById('console-ui').innerHTML = ''; 
         
         currentNode = nodes.find(n => n.type === 'inicio');
@@ -499,7 +533,7 @@ async function runStep() {
             advance('out');
             break;
         case 'entrada':
-            if(!currentNode.data) { logMsg("Erro: Defina a variável alvo (ex: x).", "error"); autoRun = false; return; }
+            if(!currentNode.data) { throwNodeError(currentNode, "Defina a variável alvo (ex: x)."); return; }
             
             let val = await askInput(currentNode.data);
             
@@ -518,38 +552,44 @@ async function runStep() {
         case 'processo':
             let parts = currentNode.data.split('=');
             if (parts.length === 2) {
-                let varName = parts[0].trim(); let result = evaluateExpr(parts[1].trim());
-                if(result !== null) { 
+                let varName = parts[0].trim(); 
+                try {
+                    let result = evaluateExpr(parts[1].trim());
                     variables[varName] = result; 
                     updateMemory(); 
                     logMsg(`Processei [${varName}] = ${result}`);
                     advance('out'); 
-                } else { autoRun = false; }
-            } else { logMsg("Erro de Sintaxe: O Processamento exige 'variavel = expressao'.", "error"); autoRun = false;}
+                } catch (err) {
+                    throwNodeError(currentNode, err.message);
+                }
+            } else { 
+                throwNodeError(currentNode, "A Atribuição exige o formato 'variavel = expressao'."); 
+            }
             break;
         case 'decisao':
-            // Barreira Pedagógica
             let tempExpr = currentNode.data.replace(/==|!=|>=|<=/g, '');
             if (tempExpr.includes('=')) {
-                logMsg(`Erro: "${currentNode.data}" não é uma sentença que é possível verificar se é ou não verdadeira. Para comparar valores, use "==".`, 'error');
-                autoRun = false;
-                resetExecution();
+                throwNodeError(currentNode, `A sentença "${currentNode.data}" não pode ser validada. Para comparar valores, utilize "==".`);
                 return;
             }
 
-            let cond = evaluateExpr(currentNode.data);
-            if(cond !== null) {
+            try {
+                let cond = evaluateExpr(currentNode.data);
                 logMsg(`Avaliei: [${currentNode.data}] -> ${cond ? 'Verdadeiro' : 'Falso'}`);
                 advance(cond ? 'T' : 'F');
-            } else { autoRun = false; }
+            } catch (err) { 
+                throwNodeError(currentNode, err.message); 
+            }
             break;
         case 'saida':
-            let outVal = evaluateExpr(currentNode.data);
-            if(outVal !== null) {
+            try {
+                let outVal = evaluateExpr(currentNode.data);
                 logMsg(`<b>SAÍDA: ${outVal}</b>`, "info"); 
                 await showOutput(outVal); 
                 advance('out');
-            } else { autoRun = false; }
+            } catch (err) { 
+                throwNodeError(currentNode, err.message); 
+            }
             break;
         case 'fim':
             logMsg("Execução Finalizada com Sucesso.", "info"); 
