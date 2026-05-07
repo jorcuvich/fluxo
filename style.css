@@ -12,19 +12,50 @@ body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(-
 .sidebar-header h3 { margin: 0; }
 .close-mobile { width: auto; padding: 5px 10px; background: transparent; border: 1px solid #555; display: none; cursor: pointer; color: white; }
 
-h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #89b4fa; border-bottom: 1px solid #444; padding-bottom: 5px; }
-.grupo-titulo { font-size: 11px; color: #a6adc8; margin: 15px 0 5px 0; text-transform: uppercase; font-weight: bold; text-align: center; border-bottom: 1px dashed #444; padding-bottom: 5px;}
+h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #89b4fa; }
+.grupo-titulo { font-size: 11px; color: #a6adc8; margin: 15px 0 10px 0; text-transform: uppercase; font-weight: bold; text-align: center; border-bottom: 1px dashed #444; padding-bottom: 5px;}
+.ferramentas-grupo { margin-bottom: 10px; }
+.motor-grupo { background: #181825; padding: 10px; border-radius: 8px; border: 1px solid #444; }
 
-/* --- BOTÕES E CONTROLOS --- */
+/* --- LAYOUT PRINCIPAL (Direita) --- */
+#main-content { display: flex; flex-direction: column; flex: 1; height: 100vh; overflow: hidden; position: relative; }
+
+/* --- PAINEL INFERIOR (Monitores IDE) --- */
+#bottom-panel { height: 200px; background: #181825; border-top: 2px solid #444; display: flex; flex-direction: column; transition: height 0.3s ease; z-index: 45; }
+#bottom-panel.minimized { height: 35px; }
+
+.panel-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; background: #313244; cursor: pointer; border-bottom: 1px solid #444; }
+.panel-title { font-size: 12px; font-weight: bold; color: #cdd6f4; text-transform: uppercase; display: flex; align-items: center; gap: 15px;}
+#btn-toggle-panel { background: transparent; border: none; color: #89b4fa; font-weight: bold; cursor: pointer; font-size: 12px; }
+
+.panel-body { display: flex; flex: 1; overflow: hidden; }
+.monitor-pane { flex: 1; padding: 10px; display: flex; flex-direction: column; }
+.memory-pane { border-right: 2px solid #313244; background: #1e1e2e;}
+.console-pane { background: #11111b; }
+.pane-title { font-size: 11px; color: #a6adc8; text-transform: uppercase; margin: 0 0 10px 0; border-bottom: 1px dashed #444; padding-bottom: 5px; }
+.monitor-content { flex: 1; overflow-y: auto; font-family: monospace; font-size: 13px; color: #cdd6f4; }
+
+/* LOGS DO CONSOLE */
+.log-line { margin-bottom: 6px; border-bottom: 1px dashed #313244; padding-bottom: 6px; }
+.log-prefix { font-weight: bold; }
+.log-error { color: var(--danger); }
+.log-warn { color: var(--warn); }
+.log-info { color: var(--accent); }
+
+/* FEEDBACK VISUAL DE RAM MUTÁVEL */
+@keyframes flashRAM { 0% { background-color: rgba(166, 227, 161, 0.4); color: white; } 100% { background-color: transparent; } }
+.ram-updated { animation: flashRAM 0.8s ease-out; border-radius: 4px; }
+
+/* --- BOTÕES E CONTROLES --- */
 .btn-custom-upload { display: block; background: #45475a; color: white; padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.2s; margin-bottom: 8px; }
 .btn-custom-upload:hover { background: #585b70; }
 
-.btn-exec, .btn-reset, .btn-danger, .btn-secondary, .btn-help { border: none; padding: 12px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.2s; font-size: 14px; }
+.btn-exec, .btn-reset, .btn-danger, .btn-secondary, .btn-help { border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.2s; font-size: 13px; }
 .mb-8 { margin-bottom: 8px; }
 .m-0 { margin: 0 !important; }
 .mt { margin-top: 25px; }
 
-.btn-exec { background: var(--accent); color: #111; font-size: 16px; }
+.btn-exec { background: var(--accent); color: #111; font-size: 14px; }
 .btn-exec:hover { background: #94cca0; }
 .btn-exec:disabled { background: #555; color: #888; cursor: not-allowed; }
 .btn-exec.paused { background: #f9e2af; color: #111; } 
@@ -32,47 +63,32 @@ h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #89
 .btn-reset { background: #45475a; color: white; }
 .btn-reset:hover { background: #585b70; }
 
-.btn-help { background: #a6e3a1; color: #111; padding: 10px; margin-bottom: 5px; margin-top: 10px; font-size: 13px; }
+.btn-help { background: #a6e3a1; color: #111; margin-bottom: 5px; margin-top: 5px; }
 .btn-template { background: #cba6f7; margin-bottom: 8px; color: #111; }
-.btn-danger { background: #f38ba8; color: #111; padding: 10px; margin-bottom: 8px; }
-.btn-secondary { background: #585b70; color: white; padding: 10px; margin-bottom: 8px; }
+.btn-danger { background: #f38ba8; color: #111; margin-bottom: 8px; }
+.btn-secondary { background: #585b70; color: white; margin-bottom: 8px; }
 .btn-target { background: #89b4fa !important; color: #111 !important; border-left: 2px solid #111 !important; }
 
 /* --- INPUTS & SELECTS --- */
-.custom-select { width: 100%; background: #1e1e2e; color: white; border: 1px solid #555; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 8px; outline: none; font-weight: bold; cursor: pointer; }
+.custom-select { width: 100%; background: #1e1e2e; color: white; border: 1px solid #555; padding: 8px; border-radius: 6px; font-size: 13px; margin-bottom: 8px; outline: none; font-weight: bold; cursor: pointer; }
 .select-sm { width: auto; padding: 4px; font-size: 12px; margin-bottom: 0; }
 
 .control-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .control-group { display: flex; align-items: center; gap: 5px; }
 .control-label { font-size: 12px; color: #a6adc8; font-weight: bold; }
-.step-counter { font-size: 11px; color: #f9e2af; font-weight: bold; background: #181825; padding: 4px 8px; border-radius: 4px; border: 1px solid #444; }
-
-/* --- CONSOLA E MEMÓRIA --- */
-.memory-box { background: #181825; padding: 10px; border-radius: 6px; font-family: monospace; min-height: 50px; font-size: 13px;}
-.console-box { max-height: 120px; overflow-y: auto; color: #a6adc8; }
-.log-line { margin-bottom: 6px; border-bottom: 1px dashed #444; padding-bottom: 6px; }
-.log-prefix { font-weight: bold; }
-.log-error { color: var(--danger); }
-.log-warn { color: var(--warn); }
-.log-info { color: var(--accent); }
-
-@keyframes flashRAM {
-    0% { background-color: rgba(166, 227, 161, 0.4); color: white; }
-    100% { background-color: transparent; }
-}
-.ram-updated { animation: flashRAM 0.8s ease-out; border-radius: 4px; }
+.step-counter { font-size: 11px; color: #f9e2af; font-weight: bold; background: #181825; padding: 4px 8px; border-radius: 4px; border: 1px solid #555; }
 
 /* --- BOTÕES GEOMÉTRICOS DA SIDEBAR --- */
-.btn-shape { position: relative; margin: 8px auto; display: flex; align-items: center; justify-content: center; background: #313244; border: 2px solid #89b4fa; color: white; width: 130px; height: 40px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+.btn-shape { position: relative; margin: 6px auto; display: flex; align-items: center; justify-content: center; background: #313244; border: 2px solid #89b4fa; color: white; width: 120px; height: 35px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s; }
 .btn-shape:hover { transform: scale(1.05); background: #3b4252; }
 .btn-shape span { pointer-events: none; }
 .btn-terminal { border-radius: 25px; border-color: #eba0ac; }
 .btn-processo { border-radius: 4px; border-color: #89b4fa; }
-.btn-decisao { width: 60px; height: 60px; transform: rotate(45deg); border-color: #f9e2af; margin: 15px auto; }
+.btn-decisao { width: 50px; height: 50px; transform: rotate(45deg); border-color: #f9e2af; margin: 15px auto; }
 .btn-decisao span { transform: rotate(-45deg); display: block; }
-.btn-entrada { transform: skewX(-15deg); border-color: #89b4fa; width: 120px; }
+.btn-entrada { transform: skewX(-15deg); border-color: #89b4fa; width: 110px; }
 .btn-entrada span { transform: skewX(15deg); display: block; }
-.btn-saida { transform: skewX(-15deg); border-color: var(--accent); width: 120px; }
+.btn-saida { transform: skewX(-15deg); border-color: var(--accent); width: 110px; }
 .btn-saida span { transform: skewX(15deg); display: block; }
 .btn-desvio { width: 30px; height: 30px; border-radius: 50%; border-color: #a6adc8; background: #45475a; }
 
@@ -167,6 +183,7 @@ h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #89
     #sidebar.open { transform: translateX(0); }
     #mobile-menu-btn { display: block; }
     #connecting-indicator { font-size: 12px; width: 80%; text-align: center; }
+    #bottom-panel { position: fixed; bottom: 0; left: 0; width: 100%; }
 }
 
 /* BLOQUEIO DE INTERFACE DURANTE EXECUÇÃO */

@@ -11,7 +11,7 @@ let errorNodeId = null;
 let currentZoom = 1;
 let isAnimating = false;
 
-// Controlo de Execução e Telemetria
+// Controle de Execução e Telemetria
 let autoRun = false;
 let stepCount = 0;
 let inputResolver = null;
@@ -82,12 +82,34 @@ window.onload = () => {
     centerCamera(); 
 };
 
+// --- GESTÃO DO PAINEL INFERIOR (IDE STYLE) ---
+function toggleBottomPanel() {
+    const panel = document.getElementById('bottom-panel');
+    const btn = document.getElementById('btn-toggle-panel');
+    
+    if (panel.classList.contains('minimized')) {
+        panel.classList.remove('minimized');
+        btn.innerText = "▼ Ocultar";
+    } else {
+        panel.classList.add('minimized');
+        btn.innerText = "▲ Mostrar";
+    }
+}
+
+// Quando a execução inicia, garantimos que o painel está aberto para ver o resultado
+function openBottomPanel() {
+    const panel = document.getElementById('bottom-panel');
+    const btn = document.getElementById('btn-toggle-panel');
+    panel.classList.remove('minimized');
+    btn.innerText = "▼ Ocultar";
+}
+
 // --- GUARDA-COSTAS DE SESSÃO (AUTO-SAVE) ---
 function saveLocalBackup() {
     try {
         localStorage.setItem('logicaFlow_backup', JSON.stringify({ nodes, links }));
     } catch(e) {
-        console.warn("Autoguardado falhou.", e);
+        console.warn("Autosalvamento falhou.", e);
     }
 }
 
@@ -170,6 +192,7 @@ function throwNodeError(node, msg) {
     btnRunAll.disabled = false;
     
     document.body.classList.remove('running');
+    openBottomPanel(); // Garante que o aluno veja o erro
     renderNodes();
 }
 
@@ -235,7 +258,7 @@ function carregarTemplate() {
     if(!key) return;
 
     if (nodes.length > 0) {
-        if (!confirm("Carregar um modelo apagará o projeto atual no ecrã. Deseja continuar?")) {
+        if (!confirm("Carregar um modelo apagará o projeto atual na tela. Deseja continuar?")) {
             select.value = "";
             return;
         }
@@ -254,7 +277,7 @@ function carregarTemplate() {
     renderSVG();
     updateMemory();
     centerCamera();
-    saveLocalBackup(); // Auto-save
+    saveLocalBackup(); 
     logMsg(`Modelo de Exemplo carregado com sucesso.`, "info");
     select.value = ""; 
     
@@ -263,7 +286,7 @@ function carregarTemplate() {
 
 function limparTela() {
     if (nodes.length === 0) return;
-    if (confirm("Tem a certeza de que pretende apagar todo o fluxograma? O progresso não guardado será perdido.")) {
+    if (confirm("Tem certeza de que deseja apagar toda a tela? O progresso não salvo será perdido.")) {
         nodes = [];
         links = [];
         variables = {};
@@ -275,13 +298,13 @@ function limparTela() {
         centerCamera(); 
         resetZoom();
         updateMemory();
-        saveLocalBackup(); // Limpa backup local
-        document.getElementById('console-ui').innerHTML = 'Projeto limpo. A aguardar...';
+        saveLocalBackup(); 
+        document.getElementById('console-ui').innerHTML = 'Projeto limpo. Aguardando...';
     }
 }
 
 function exportarProjeto() {
-    if (nodes.length === 0) { logMsg("O projeto está vazio. Adicione blocos antes de guardar.", "warn"); return; }
+    if (nodes.length === 0) { logMsg("O projeto está vazio. Adicione blocos antes de salvar.", "warn"); return; }
     
     const projeto = { nodes, links, variables };
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projeto));
@@ -313,14 +336,14 @@ function importarProjeto(event) {
                 renderNodes();
                 renderSVG();
                 updateMemory();
-                saveLocalBackup(); // Auto-save import
+                saveLocalBackup(); 
                 logMsg("Projeto carregado com sucesso!", "info");
                 centerCamera(); 
             } else {
-                throw new Error("Estrutura do ficheiro inválida.");
+                throw new Error("Estrutura do arquivo inválida.");
             }
         } catch (err) {
-            logMsg("Erro ao ler o ficheiro: " + err.message, "error");
+            logMsg("Erro ao ler o arquivo: " + err.message, "error");
         }
     };
     reader.readAsText(file);
@@ -361,7 +384,7 @@ function addNode(type) {
     nodes.push(node);
     renderNodes();
     renderSVG();
-    saveLocalBackup(); // Auto-save
+    saveLocalBackup(); 
     if(window.innerWidth <= 768) toggleSidebar(); 
 }
 
@@ -369,7 +392,7 @@ function updateNodeData(id, val) {
     const node = nodes.find(n => n.id === id);
     if (node) node.data = val;
     if (errorNodeId === id) { errorNodeId = null; renderNodes(); } 
-    saveLocalBackup(); // Auto-save
+    saveLocalBackup(); 
 }
 
 function deleteNode(id, event) {
@@ -378,7 +401,7 @@ function deleteNode(id, event) {
     links = links.filter(l => l.from !== id && l.to !== id);
     if (currentNode && currentNode.id === id) resetExecution();
     else { renderNodes(); renderSVG(); }
-    saveLocalBackup(); // Auto-save
+    saveLocalBackup(); 
 }
 
 function renderNodes() {
@@ -420,7 +443,6 @@ function renderNodes() {
         let ports = '';
         if (node.type !== 'inicio') ports += `<div class="port port-in" data-target-id="${node.id}"></div>`;
 
-        // Utiliza o sanitizador para garantir defesa XSS visual
         let safeData = sanitizeHTML(node.data);
         let inputW = Math.max(10, node.data.length + 2);
 
@@ -520,9 +542,9 @@ function canvasUp(e) {
         }
         cancelConnect();
         
-        if (linkChanged) saveLocalBackup(); // Auto-save
+        if (linkChanged) saveLocalBackup(); 
     } else {
-        saveLocalBackup(); // Auto-save ao largar um bloco
+        saveLocalBackup(); 
     }
 }
 
@@ -642,10 +664,11 @@ function startAutoRun() {
     if (autoRun) {
         autoRun = false;
         updateAutoRunUI(false);
-        logMsg("Execução pausada pelo utilizador.", "warn");
+        logMsg("Execução pausada pelo usuário.", "warn");
     } else {
         autoRun = true;
         updateAutoRunUI(true);
+        openBottomPanel();
         runStep();
     }
 }
@@ -706,7 +729,7 @@ function advance(port) {
     } else {
         if (currentNode && currentNode.type === 'decisao') {
             let portName = port === 'T' ? 'VERDADEIRO (V)' : 'FALSO (F)';
-            throwNodeError(currentNode, `A saída ${portName} desta decisão precisa de estar conectada a algum bloco.`);
+            throwNodeError(currentNode, `A saída ${portName} desta decisão precisa estar conectada a algum bloco.`);
         } else if (currentNode && currentNode.type !== 'fim') {
             throwNodeError(currentNode, "Fluxo interrompido: Ponto sem conexão de saída.");
         } else {
@@ -728,6 +751,7 @@ async function runStep() {
     if (!currentNode) {
         document.activeElement.blur(); 
         document.body.classList.add('running'); 
+        openBottomPanel();
         
         document.getElementById('console-ui').innerHTML = ''; 
         variables = {};
@@ -754,7 +778,7 @@ async function runStep() {
         document.getElementById('step-counter').innerText = `Passos: ${stepCount}`;
         
         if (stepCount > 2000) {
-            throwNodeError(currentNode, "Disjuntor de Segurança: O seu algoritmo ultrapassou 2.000 passos. Verifique se criou um Loop Infinito.");
+            throwNodeError(currentNode, "Disjuntor de Segurança: Seu algoritmo ultrapassou 2.000 passos. Verifique se criou um Loop Infinito.");
             return;
         }
     }
@@ -785,7 +809,7 @@ async function runStep() {
                 logMsg(`Li variável [${inVarName}] = ${val}`);
                 advance('out'); 
             } else {
-                logMsg("Entrada cancelada pelo utilizador. Execução parada.", "warn");
+                logMsg("Entrada cancelada pelo usuário. Execução parada.", "warn");
                 resetExecution();
             }
             break;
@@ -852,7 +876,7 @@ async function runStep() {
 
 window.addEventListener('beforeunload', function (e) {
     if (nodes.length > 0) {
-        const msg = 'Tem a certeza de que pretende sair? O seu projeto não foi guardado.';
+        const msg = 'Tem certeza de que deseja sair? Seu projeto não foi salvo.';
         e.returnValue = msg;
         return msg;
     }
