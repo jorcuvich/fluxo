@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -11,13 +11,15 @@
     <button id="mobile-menu-btn" onclick="toggleSidebar()">☰ Menu</button>
 
     <div id="sidebar">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0;">Componentes</h3>
-            <button onclick="toggleSidebar()" style="width:auto; padding:5px 10px; background:transparent; border:1px solid #555; display:none;" class="close-mobile">X</button>
+        <div class="sidebar-header">
+            <h3>Lógica Flow</h3>
+            <button onclick="toggleSidebar()" class="close-mobile">X</button>
         </div>
         
+        <button onclick="openHelp()" class="btn-help">❔ Como Usar (Guia)</button>
+
         <div class="ferramentas-grupo">
-            <div class="grupo-titulo">Controle de Fluxo</div>
+            <div class="grupo-titulo">Controlo de Fluxo</div>
             <button id="btn-add-inicio" class="btn-shape btn-terminal" onclick="addNode('inicio')">▶ INÍCIO</button>
             <button class="btn-shape btn-terminal" onclick="addNode('fim')">⏹ FIM</button>
             
@@ -39,46 +41,46 @@
         </div>
         
         <div>
-            <h3>Console do Sistema</h3>
-            <div id="console-ui" class="memory-box" style="max-height: 120px; overflow-y: auto; color: #a6adc8;">Aguardando execução...</div>
+            <h3>Consola do Sistema</h3>
+            <div id="console-ui" class="memory-box console-box">A aguardar execução...</div>
         </div>
 
         <div>
             <h3>Motor de Execução</h3>
             
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                <div style="display: flex; align-items: center; gap: 5px;">
-                    <label style="font-size: 12px; color: #a6adc8; font-weight: bold;">Velocidade:</label>
-                    <select id="sim-speed" style="background: #1e1e2e; color: white; border: 1px solid #555; padding: 4px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; outline: none;">
+            <div class="control-row">
+                <div class="control-group">
+                    <label class="control-label">Velocidade:</label>
+                    <select id="sim-speed" class="custom-select select-sm">
                         <option value="1000">1x (Normal)</option>
                         <option value="500">2x (Rápido)</option>
                         <option value="100">10x (Turbo)</option>
                         <option value="10">MAX (Raio)</option>
                     </select>
                 </div>
-                <span id="step-counter" style="font-size: 11px; color: #f9e2af; font-weight: bold; background: #181825; padding: 4px 8px; border-radius: 4px; border: 1px solid #444;">Passos: 0</span>
+                <span id="step-counter" class="step-counter">Passos: 0</span>
             </div>
 
-            <button id="btn-run-all" class="btn-exec" onclick="startAutoRun()" style="background: #89b4fa; margin-bottom: 8px;">▶ Executar Tudo</button>
-            <button id="btn-next" class="btn-exec" onclick="runStep()">Passo a Passo ➡</button>
+            <button id="btn-run-all" class="btn-exec mb-8" onclick="startAutoRun()">▶ Executar Tudo</button>
+            <button id="btn-next" class="btn-exec mb-8" onclick="runStep()">Passo a Passo ➡</button>
             <button class="btn-reset" onclick="resetExecution()">Parar Execução</button>
         </div>
 
         <div class="ferramentas-grupo">
             <div class="grupo-titulo">Galeria de Projetos</div>
-            <select id="template-select" style="width: 100%; background: #1e1e2e; color: white; border: 1px solid #555; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 8px; outline: none; font-weight: bold;">
+            <select id="template-select" class="custom-select">
                 <option value="">-- Escolher Exemplo --</option>
                 <option value="soma">1. Somador Simples</option>
                 <option value="idade">2. Maior ou Menor</option>
                 <option value="loop">3. Contador (Repetição)</option>
             </select>
-            <button onclick="carregarTemplate()" class="btn-exec" style="background: #cba6f7; margin-bottom: 8px; color: #111;">Carregar Modelo</button>
+            <button onclick="carregarTemplate()" class="btn-exec btn-template">Carregar Modelo</button>
         </div>
 
         <div class="ferramentas-grupo">
             <div class="grupo-titulo">O Seu Projeto</div>
-            <button onclick="limparTela()" style="background: #f38ba8; color: #111; width: 100%; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 8px;">🗑️ Limpar Tela</button>
-            <button onclick="exportarProjeto()" style="background: #585b70; width: 100%; border: none; color: white; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 8px;">💾 Salvar (.json)</button>
+            <button onclick="limparTela()" class="btn-danger">🗑️ Limpar Ecrã</button>
+            <button onclick="exportarProjeto()" class="btn-secondary">💾 Guardar (.json)</button>
             <label for="upload-file" class="btn-custom-upload">📂 Abrir (.json)</label>
             <input type="file" id="upload-file" accept=".json" onchange="importarProjeto(event)" style="display:none;">
         </div>
@@ -98,25 +100,55 @@
         <button onclick="changeZoom(-0.1)">-</button>
         <button onclick="resetZoom()">1x</button>
         <button onclick="changeZoom(0.1)">+</button>
-        <button onclick="centerCamera()" title="Centrar no Código" style="background: #89b4fa; color: #111; border-left: 2px solid #111;">🎯</button>
+        <button onclick="centerCamera()" title="Centrar no Código" class="btn-target">🎯</button>
     </div>
 
     <div id="modal-input" class="modal-overlay">
         <div class="modal-content">
-            <h4 id="input-label" style="margin-top:0; color: #89b4fa; font-size: 16px;">Entrada de Dados</h4>
+            <h4 id="input-label" class="modal-title primary">Entrada de Dados</h4>
             <input type="text" id="input-value" placeholder="Digite o valor..." autocomplete="off">
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button onclick="cancelInput()" class="btn-reset" style="margin:0;">Cancelar</button>
-                <button onclick="confirmInput()" class="btn-exec" style="margin:0;">Confirmar</button>
+            <div class="modal-actions">
+                <button onclick="cancelInput()" class="btn-reset m-0">Cancelar</button>
+                <button onclick="confirmInput()" class="btn-exec m-0">Confirmar</button>
             </div>
         </div>
     </div>
 
     <div id="modal-output" class="modal-overlay">
         <div class="modal-content">
-            <h4 style="margin-top:0; color: var(--accent); font-size: 16px; text-transform: uppercase;">Saída do Sistema</h4>
-            <div id="output-value" style="font-size: 20px; font-weight: bold; color: white; margin: 25px 0; font-family: monospace; word-wrap: break-word;"></div>
-            <button id="btn-close-output" onclick="closeOutput()" class="btn-exec" style="margin:0;">Continuar</button>
+            <h4 class="modal-title accent">Saída do Sistema</h4>
+            <div id="output-value" class="output-display"></div>
+            <button id="btn-close-output" onclick="closeOutput()" class="btn-exec m-0">Continuar</button>
+        </div>
+    </div>
+
+    <div id="modal-help" class="modal-overlay">
+        <div class="modal-content help-content">
+            <div class="help-header">
+                <h2>Guia Rápido de Uso</h2>
+                <button onclick="closeHelp()" class="btn-close-help">✖ Fechar (ESC)</button>
+            </div>
+            
+            <h3 class="help-section-title" style="color: #a6e3a1;">🛠️ Como Funciona o Motor</h3>
+            <ul class="help-list">
+                <li><b>Adicionar:</b> Clique num bloco do menu lateral para o colocar no ecrã.</li>
+                <li><b>Ligar:</b> Clique na porta azul de saída (em baixo) e arraste até à porta de entrada (em cima) de outro bloco.</li>
+                <li><b>Apagar Setas:</b> Clique na porta de saída de onde a seta nasce e largue o botão no espaço vazio do ecrã.</li>
+                <li><b>Apagar Blocos:</b> Passe o rato por cima do bloco e clique no botão vermelho "✖".</li>
+                <li><b>Navegar:</b> Clique no fundo vazio do ecrã e arraste. Use o ícone 🎯 para recentrar a câmara.</li>
+            </ul>
+
+            <h3 class="help-section-title mt" style="color: #f9e2af;">📘 Dicionário de Blocos</h3>
+            <div class="help-grid">
+                <div class="help-card card-inicio"><b>▶ INÍCIO / ⏹ FIM</b><br>Todo o algoritmo precisa de começar com um INÍCIO e terminar no FIM.</div>
+                <div class="help-card card-leia"><b>⌨️ LEIA (Entrada)</b><br>Pede um valor ao utilizador e guarda-o numa variável. <i>Ex: idade</i></div>
+                <div class="help-card card-escreva"><b>🖥️ ESCREVA (Saída)</b><br>Mostra uma variável ou mensagem no ecrã. Use aspas para texto. <i>Ex: "Olá!"</i></div>
+                <div class="help-card card-processo"><b>⚙️ PROCESSO</b><br>Faz contas e altera o valor das variáveis. <i>Ex: soma = a + b</i></div>
+                <div class="help-card card-decisao"><b>❓ DECISÃO</b><br>Faz uma pergunta lógica <i>(Ex: nota >= 10)</i> e divide o caminho em Verdadeiro (V) ou Falso (F).</div>
+                <div class="help-card card-desvio"><b>⚪ PONTO DE DESVIO</b><br>Serve apenas para curvar setas ou fechar ciclos (loops) de forma organizada.</div>
+            </div>
+            
+            <button onclick="closeHelp()" class="btn-exec mt">Começar a Programar!</button>
         </div>
     </div>
 

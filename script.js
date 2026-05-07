@@ -11,7 +11,7 @@ let errorNodeId = null;
 let currentZoom = 1;
 let isAnimating = false;
 
-// Controle de Execução e Telemetria
+// Controlo de Execução e Telemetria
 let autoRun = false;
 let stepCount = 0;
 let inputResolver = null;
@@ -78,8 +78,53 @@ const TEMPLATES = {
 };
 
 window.onload = () => {
+    loadLocalBackup();
     centerCamera(); 
 };
+
+// --- GUARDA-COSTAS DE SESSÃO (AUTO-SAVE) ---
+function saveLocalBackup() {
+    try {
+        localStorage.setItem('logicaFlow_backup', JSON.stringify({ nodes, links }));
+    } catch(e) {
+        console.warn("Autoguardado falhou.", e);
+    }
+}
+
+function loadLocalBackup() {
+    try {
+        const backup = localStorage.getItem('logicaFlow_backup');
+        if (backup) {
+            const data = JSON.parse(backup);
+            if (data.nodes && data.nodes.length > 0) {
+                nodes = data.nodes;
+                links = data.links || [];
+                renderNodes();
+                renderSVG();
+                logMsg("Sessão anterior recuperada com sucesso.", "info");
+            }
+        }
+    } catch(e) {
+        console.error("Erro ao recuperar backup", e);
+    }
+}
+
+// --- PROTEÇÃO ANTI-XSS ---
+function sanitizeHTML(str) {
+    if (!str) return "";
+    return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    }[tag]));
+}
+
+// --- FUNÇÕES DO GUIA DE AJUDA ---
+function openHelp() {
+    document.getElementById('modal-help').style.display = 'flex';
+}
+
+function closeHelp() {
+    document.getElementById('modal-help').style.display = 'none';
+}
 
 function centerCamera() {
     if (nodes.length === 0) {
@@ -99,22 +144,19 @@ function isValidVarName(name) {
 
 function logMsg(msg, type='info') {
     const consoleUI = document.getElementById('console-ui');
-    const color = type === 'error' ? 'var(--danger)' : (type === 'warn' ? 'var(--warn)' : 'var(--accent)');
     const prefix = type === 'error' ? '✖ ERRO:' : (type === 'warn' ? '⚠ AVISO:' : '▶');
     
-    consoleUI.innerHTML += `<div style="margin-bottom:6px; border-bottom:1px dashed #444; padding-bottom:6px;"><span style="color:${color}; font-weight:bold;">${prefix}</span> ${msg}</div>`;
+    consoleUI.innerHTML += `<div class="log-line"><span class="log-prefix log-${type}">${prefix}</span> ${msg}</div>`;
     consoleUI.scrollTop = consoleUI.scrollHeight;
 }
 
 function updateAutoRunUI(isRunning) {
     if (isRunning) {
         btnRunAll.innerHTML = "⏸ Pausar";
-        btnRunAll.style.background = "#f9e2af";
-        btnRunAll.style.color = "#111";
+        btnRunAll.classList.add('paused');
     } else {
         btnRunAll.innerHTML = "▶ Executar Tudo";
-        btnRunAll.style.background = "#89b4fa"; 
-        btnRunAll.style.color = "#111";
+        btnRunAll.classList.remove('paused');
     }
 }
 
@@ -126,6 +168,8 @@ function throwNodeError(node, msg) {
     isAnimating = false;
     btnNext.disabled = false;
     btnRunAll.disabled = false;
+    
+    document.body.classList.remove('running');
     renderNodes();
 }
 
@@ -140,6 +184,11 @@ function askInput(varName) {
 
 function confirmInput() {
     const val = document.getElementById('input-value').value;
+    if(val.trim() === "") {
+        alert("A entrada não pode estar vazia. Insira um valor numérico ou de texto, ou clique em 'Cancelar' para interromper a execução.");
+        document.getElementById('input-value').focus();
+        return;
+    }
     document.getElementById('modal-input').style.display = 'none';
     if(inputResolver) inputResolver(val);
 }
@@ -162,11 +211,18 @@ function closeOutput() {
 }
 
 document.addEventListener('keyup', function(event) {
+    if (event.key === 'Escape') {
+        closeHelp();
+        if (document.getElementById('modal-input').style.display === 'flex') cancelInput();
+        if (document.getElementById('modal-output').style.display === 'flex') closeOutput();
+    }
     if (event.key === 'Enter') {
         if (document.getElementById('modal-input').style.display === 'flex') {
             confirmInput();
         } else if (document.getElementById('modal-output').style.display === 'flex') {
             closeOutput();
+        } else if (document.getElementById('modal-help').style.display === 'flex') {
+            closeHelp();
         } else if (document.activeElement.tagName !== 'INPUT') {
             if (!isAnimating && !autoRun) runStep();
         }
@@ -198,6 +254,7 @@ function carregarTemplate() {
     renderSVG();
     updateMemory();
     centerCamera();
+    saveLocalBackup(); // Auto-save
     logMsg(`Modelo de Exemplo carregado com sucesso.`, "info");
     select.value = ""; 
     
@@ -206,7 +263,7 @@ function carregarTemplate() {
 
 function limparTela() {
     if (nodes.length === 0) return;
-    if (confirm("Tem certeza que deseja apagar todo o fluxograma? O progresso não salvo será perdido.")) {
+    if (confirm("Tem a certeza de que pretende apagar todo o fluxograma? O progresso não guardado será perdido.")) {
         nodes = [];
         links = [];
         variables = {};
@@ -218,12 +275,13 @@ function limparTela() {
         centerCamera(); 
         resetZoom();
         updateMemory();
-        document.getElementById('console-ui').innerHTML = 'Projeto limpo. Aguardando...';
+        saveLocalBackup(); // Limpa backup local
+        document.getElementById('console-ui').innerHTML = 'Projeto limpo. A aguardar...';
     }
 }
 
 function exportarProjeto() {
-    if (nodes.length === 0) { logMsg("O projeto está vazio. Adicione blocos antes de salvar.", "warn"); return; }
+    if (nodes.length === 0) { logMsg("O projeto está vazio. Adicione blocos antes de guardar.", "warn"); return; }
     
     const projeto = { nodes, links, variables };
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projeto));
@@ -255,13 +313,14 @@ function importarProjeto(event) {
                 renderNodes();
                 renderSVG();
                 updateMemory();
+                saveLocalBackup(); // Auto-save import
                 logMsg("Projeto carregado com sucesso!", "info");
                 centerCamera(); 
             } else {
-                throw new Error("Estrutura do arquivo inválida.");
+                throw new Error("Estrutura do ficheiro inválida.");
             }
         } catch (err) {
-            logMsg("Erro ao ler o arquivo: " + err.message, "error");
+            logMsg("Erro ao ler o ficheiro: " + err.message, "error");
         }
     };
     reader.readAsText(file);
@@ -302,6 +361,7 @@ function addNode(type) {
     nodes.push(node);
     renderNodes();
     renderSVG();
+    saveLocalBackup(); // Auto-save
     if(window.innerWidth <= 768) toggleSidebar(); 
 }
 
@@ -309,6 +369,7 @@ function updateNodeData(id, val) {
     const node = nodes.find(n => n.id === id);
     if (node) node.data = val;
     if (errorNodeId === id) { errorNodeId = null; renderNodes(); } 
+    saveLocalBackup(); // Auto-save
 }
 
 function deleteNode(id, event) {
@@ -317,6 +378,7 @@ function deleteNode(id, event) {
     links = links.filter(l => l.from !== id && l.to !== id);
     if (currentNode && currentNode.id === id) resetExecution();
     else { renderNodes(); renderSVG(); }
+    saveLocalBackup(); // Auto-save
 }
 
 function renderNodes() {
@@ -358,7 +420,8 @@ function renderNodes() {
         let ports = '';
         if (node.type !== 'inicio') ports += `<div class="port port-in" data-target-id="${node.id}"></div>`;
 
-        let safeData = node.data.replace(/"/g, '&quot;');
+        // Utiliza o sanitizador para garantir defesa XSS visual
+        let safeData = sanitizeHTML(node.data);
         let inputW = Math.max(10, node.data.length + 2);
 
         if (node.type === 'decisao') {
@@ -442,16 +505,24 @@ function canvasUp(e) {
             targetEl = document.elementFromPoint(e.clientX, e.clientY);
         }
 
+        let linkChanged = false;
         if (targetEl && targetEl.classList.contains('port-in')) {
             const toId = targetEl.getAttribute('data-target-id');
             if (toId && toId !== connectingData.fromId) {
                 links = links.filter(l => !(l.from === connectingData.fromId && l.port === connectingData.port));
                 links.push({ from: connectingData.fromId, port: connectingData.port, to: toId });
+                linkChanged = true;
             }
         } else {
+            const oldLen = links.length;
             links = links.filter(l => !(l.from === connectingData.fromId && l.port === connectingData.port));
+            if(oldLen !== links.length) linkChanged = true;
         }
         cancelConnect();
+        
+        if (linkChanged) saveLocalBackup(); // Auto-save
+    } else {
+        saveLocalBackup(); // Auto-save ao largar um bloco
     }
 }
 
@@ -499,19 +570,15 @@ function renderSVG() {
     svgLayer.innerHTML = html;
 }
 
-// --- INTERPRETADOR MATEMÁTICO COM PROTEÇÃO ---
 function evaluateExpr(expr) {
     let scope = { ...variables };
     let safeExpr = expr.replace(/(\d),(\d)/g, '$1.$2');
     safeExpr = safeExpr.replace(/\^/g, '**');
     
-    // NOVO: Tradutor Lógico Inteligente (Item 1)
-    // Lê e traduz E, OU, NAO para sintaxe JS, ignorando os que estiverem dentro de aspas (strings)
     safeExpr = safeExpr.replace(/\b(E|OU|NAO|NÃO|e|ou|nao|não)\b/gi, function(match, p1, offset, string) {
         let quotesBefore = (string.substring(0, offset).match(/"/g) || []).length;
         let singleQuotesBefore = (string.substring(0, offset).match(/'/g) || []).length;
         
-        // Se a palavra estiver entre aspas, devolve a palavra original (não a quebra)
         if (quotesBefore % 2 !== 0 || singleQuotesBefore % 2 !== 0) return match;
         
         let m = match.toUpperCase();
@@ -527,7 +594,6 @@ function evaluateExpr(expr) {
         const func = new Function(...keys, "return " + safeExpr + ";");
         let result = func(...values);
         
-        // NOVO: Proteção contra o Paradoxo da Divisão por Zero (Item 2)
         if (result === Infinity || result === -Infinity) {
             throw new Error("Erro Matemático: Impossível dividir por zero.");
         }
@@ -537,7 +603,6 @@ function evaluateExpr(expr) {
         
         return result;
     } catch (e) {
-        // Se for o nosso erro de divisão por zero, passa-o para a frente
         if (e.message === "Erro Matemático: Impossível dividir por zero.") {
             throw e;
         }
@@ -566,6 +631,8 @@ function resetExecution() {
     updateAutoRunUI(false); 
     btnNext.disabled = false;
     btnRunAll.disabled = false;
+    
+    document.body.classList.remove('running');
     
     animLayer.innerHTML = ''; 
     renderNodes(); 
@@ -649,6 +716,7 @@ function advance(port) {
         currentNode = null;
         autoRun = false;
         updateAutoRunUI(false); 
+        document.body.classList.remove('running');
         renderNodes();
     }
 }
@@ -658,6 +726,9 @@ async function runStep() {
     if (isAnimating) return; 
 
     if (!currentNode) {
+        document.activeElement.blur(); 
+        document.body.classList.add('running'); 
+        
         document.getElementById('console-ui').innerHTML = ''; 
         variables = {};
         updateMemory();
@@ -667,6 +738,7 @@ async function runStep() {
             logMsg("O algoritmo exige um bloco de INÍCIO.", "error");
             autoRun = false;
             updateAutoRunUI(false);
+            document.body.classList.remove('running');
             return;
         }
         
