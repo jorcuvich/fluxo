@@ -65,7 +65,18 @@
         </div>
 
         <div class="ferramentas-grupo">
-            <div class="grupo-titulo">Projeto</div>
+            <div class="grupo-titulo">Galeria de Projetos</div>
+            <select id="template-select" style="width: 100%; background: #1e1e2e; color: white; border: 1px solid #555; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 8px; outline: none; font-weight: bold;">
+                <option value="">-- Escolher Exemplo --</option>
+                <option value="soma">1. Somador Simples</option>
+                <option value="idade">2. Maior ou Menor</option>
+                <option value="loop">3. Contador (Repetição)</option>
+            </select>
+            <button onclick="carregarTemplate()" class="btn-exec" style="background: #cba6f7; margin-bottom: 8px; color: #111;">Carregar Modelo</button>
+        </div>
+
+        <div class="ferramentas-grupo">
+            <div class="grupo-titulo">O Seu Projeto</div>
             <button onclick="limparTela()" style="background: #f38ba8; color: #111; width: 100%; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 8px;">🗑️ Limpar Tela</button>
             <button onclick="exportarProjeto()" style="background: #585b70; width: 100%; border: none; color: white; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 8px;">💾 Salvar (.json)</button>
             <label for="upload-file" class="btn-custom-upload">📂 Abrir (.json)</label>

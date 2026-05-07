@@ -27,8 +27,58 @@ const connIndicator = document.getElementById('connecting-indicator');
 const btnNext = document.getElementById('btn-next');
 const btnRunAll = document.getElementById('btn-run-all');
 
+// --- BASE DE DADOS DOS TEMPLATES (GALERIA) ---
+const TEMPLATES = {
+    "soma": {
+        nodes: [
+            { id: "n1", type: "inicio", x: 2425, y: 2200, data: "" },
+            { id: "n2", type: "entrada", x: 2425, y: 2300, data: "a" },
+            { id: "n3", type: "entrada", x: 2425, y: 2400, data: "b" },
+            { id: "n4", type: "processo", x: 2425, y: 2500, data: "soma = a + b" },
+            { id: "n5", type: "saida", x: 2425, y: 2600, data: "soma" },
+            { id: "n6", type: "fim", x: 2425, y: 2700, data: "" }
+        ],
+        links: [
+            { from: "n1", port: "out", to: "n2" }, { from: "n2", port: "out", to: "n3" },
+            { from: "n3", port: "out", to: "n4" }, { from: "n4", port: "out", to: "n5" },
+            { from: "n5", port: "out", to: "n6" }
+        ]
+    },
+    "idade": {
+        nodes: [
+            { id: "n1", type: "inicio", x: 2425, y: 2200, data: "" },
+            { id: "n2", type: "entrada", x: 2425, y: 2300, data: "idade" },
+            { id: "n3", type: "decisao", x: 2425, y: 2400, data: "idade >= 18" },
+            { id: "n4", type: "saida", x: 2200, y: 2600, data: "\"Maior de Idade\"" },
+            { id: "n5", type: "saida", x: 2650, y: 2600, data: "\"Menor de Idade\"" },
+            { id: "n6", type: "fim", x: 2425, y: 2750, data: "" }
+        ],
+        links: [
+            { from: "n1", port: "out", to: "n2" }, { from: "n2", port: "out", to: "n3" },
+            { from: "n3", port: "T", to: "n4" }, { from: "n3", port: "F", to: "n5" },
+            { from: "n4", port: "out", to: "n6" }, { from: "n5", port: "out", to: "n6" }
+        ]
+    },
+    "loop": {
+        nodes: [
+            { id: "n1", type: "inicio", x: 2425, y: 2100, data: "" },
+            { id: "n2", type: "processo", x: 2425, y: 2200, data: "c = 1" },
+            { id: "n3", type: "decisao", x: 2425, y: 2350, data: "c <= 5" },
+            { id: "n4", type: "saida", x: 2425, y: 2550, data: "c" },
+            { id: "n5", type: "processo", x: 2150, y: 2550, data: "c = c + 1" },
+            { id: "n6", type: "fim", x: 2700, y: 2350, data: "" }
+        ],
+        links: [
+            { from: "n1", port: "out", to: "n2" }, { from: "n2", port: "out", to: "n3" },
+            { from: "n3", port: "T", to: "n4" }, { from: "n4", port: "out", to: "n5" },
+            { from: "n5", port: "out", to: "n3" }, 
+            { from: "n3", port: "F", to: "n6" }
+        ]
+    }
+};
+
 window.onload = () => {
-    centerCamera(); // Inicializa centrado
+    centerCamera(); 
 };
 
 function centerCamera() {
@@ -56,10 +106,23 @@ function logMsg(msg, type='info') {
     consoleUI.scrollTop = consoleUI.scrollHeight;
 }
 
+function updateAutoRunUI(isRunning) {
+    if (isRunning) {
+        btnRunAll.innerHTML = "⏸ Pausar";
+        btnRunAll.style.background = "#f9e2af";
+        btnRunAll.style.color = "#111";
+    } else {
+        btnRunAll.innerHTML = "▶ Executar Tudo";
+        btnRunAll.style.background = "#89b4fa"; 
+        btnRunAll.style.color = "#111";
+    }
+}
+
 function throwNodeError(node, msg) {
     errorNodeId = node.id;
     logMsg(msg, "error");
     autoRun = false;
+    updateAutoRunUI(false); 
     isAnimating = false;
     btnNext.disabled = false;
     btnRunAll.disabled = false;
@@ -110,16 +173,51 @@ document.addEventListener('keyup', function(event) {
     }
 });
 
+function carregarTemplate() {
+    const select = document.getElementById('template-select');
+    const key = select.value;
+    if(!key) return;
+
+    if (nodes.length > 0) {
+        if (!confirm("Carregar um modelo apagará o projeto atual no ecrã. Deseja continuar?")) {
+            select.value = "";
+            return;
+        }
+    }
+
+    const projeto = TEMPLATES[key];
+    
+    nodes = JSON.parse(JSON.stringify(projeto.nodes));
+    links = JSON.parse(JSON.stringify(projeto.links));
+    variables = {};
+    stepCount = 0;
+    document.getElementById('step-counter').innerText = `Passos: 0`;
+
+    resetExecution();
+    renderNodes();
+    renderSVG();
+    updateMemory();
+    centerCamera();
+    logMsg(`Modelo de Exemplo carregado com sucesso.`, "info");
+    select.value = ""; 
+    
+    if(window.innerWidth <= 768) toggleSidebar();
+}
+
 function limparTela() {
     if (nodes.length === 0) return;
     if (confirm("Tem certeza que deseja apagar todo o fluxograma? O progresso não salvo será perdido.")) {
         nodes = [];
         links = [];
+        variables = {};
+        stepCount = 0;
+        document.getElementById('step-counter').innerText = `Passos: 0`;
         resetExecution(); 
         renderNodes();
         renderSVG();
         centerCamera(); 
         resetZoom();
+        updateMemory();
         document.getElementById('console-ui').innerHTML = 'Projeto limpo. Aguardando...';
     }
 }
@@ -150,6 +248,8 @@ function importarProjeto(event) {
                 nodes = projeto.nodes;
                 links = projeto.links || [];
                 variables = projeto.variables || {};
+                stepCount = 0;
+                document.getElementById('step-counter').innerText = `Passos: 0`;
                 
                 resetExecution(); 
                 renderNodes();
@@ -258,7 +358,6 @@ function renderNodes() {
         let ports = '';
         if (node.type !== 'inicio') ports += `<div class="port port-in" data-target-id="${node.id}"></div>`;
 
-        // Tratamento da conversão de caracteres de aspas para não quebrar o HTML e expansão dinâmica usando a medida tipográfica 'ch'
         let safeData = node.data.replace(/"/g, '&quot;');
         let inputW = Math.max(10, node.data.length + 2);
 
@@ -400,10 +499,27 @@ function renderSVG() {
     svgLayer.innerHTML = html;
 }
 
+// --- INTERPRETADOR MATEMÁTICO COM PROTEÇÃO ---
 function evaluateExpr(expr) {
     let scope = { ...variables };
     let safeExpr = expr.replace(/(\d),(\d)/g, '$1.$2');
     safeExpr = safeExpr.replace(/\^/g, '**');
+    
+    // NOVO: Tradutor Lógico Inteligente (Item 1)
+    // Lê e traduz E, OU, NAO para sintaxe JS, ignorando os que estiverem dentro de aspas (strings)
+    safeExpr = safeExpr.replace(/\b(E|OU|NAO|NÃO|e|ou|nao|não)\b/gi, function(match, p1, offset, string) {
+        let quotesBefore = (string.substring(0, offset).match(/"/g) || []).length;
+        let singleQuotesBefore = (string.substring(0, offset).match(/'/g) || []).length;
+        
+        // Se a palavra estiver entre aspas, devolve a palavra original (não a quebra)
+        if (quotesBefore % 2 !== 0 || singleQuotesBefore % 2 !== 0) return match;
+        
+        let m = match.toUpperCase();
+        if (m === 'E') return '&&';
+        if (m === 'OU') return '||';
+        if (m === 'NAO' || m === 'NÃO') return '!';
+        return match;
+    });
     
     try {
         const keys = Object.keys(scope);
@@ -411,11 +527,20 @@ function evaluateExpr(expr) {
         const func = new Function(...keys, "return " + safeExpr + ";");
         let result = func(...values);
         
+        // NOVO: Proteção contra o Paradoxo da Divisão por Zero (Item 2)
+        if (result === Infinity || result === -Infinity) {
+            throw new Error("Erro Matemático: Impossível dividir por zero.");
+        }
+        
         if (typeof result === 'number' && isNaN(result)) throw new Error("NaN");
         if (result === undefined) throw new Error("Undefined");
         
         return result;
     } catch (e) {
+        // Se for o nosso erro de divisão por zero, passa-o para a frente
+        if (e.message === "Erro Matemático: Impossível dividir por zero.") {
+            throw e;
+        }
         if (e instanceof ReferenceError) {
             let missing = e.message.split(' ')[0]; 
             throw new Error(`A variável '${missing}' não possui valor (não foi inicializada).`);
@@ -438,20 +563,24 @@ function resetExecution() {
     currentNode = null; 
     isAnimating = false;
     autoRun = false;
+    updateAutoRunUI(false); 
     btnNext.disabled = false;
     btnRunAll.disabled = false;
     
-    stepCount = 0;
-    document.getElementById('step-counter').innerText = `Passos: ${stepCount}`;
-    
     animLayer.innerHTML = ''; 
-    updateMemory(); 
     renderNodes(); 
 }
 
 function startAutoRun() {
-    autoRun = true;
-    runStep();
+    if (autoRun) {
+        autoRun = false;
+        updateAutoRunUI(false);
+        logMsg("Execução pausada pelo utilizador.", "warn");
+    } else {
+        autoRun = true;
+        updateAutoRunUI(true);
+        runStep();
+    }
 }
 
 function advance(port) {
@@ -460,7 +589,7 @@ function advance(port) {
     if (link) {
         isAnimating = true;
         btnNext.disabled = true; 
-        btnRunAll.disabled = true;
+        btnRunAll.disabled = false;
 
         const speed = parseInt(document.getElementById('sim-speed').value) || 1000;
 
@@ -498,7 +627,6 @@ function advance(port) {
             renderNodes(); 
             isAnimating = false;
             btnNext.disabled = false;
-            btnRunAll.disabled = false;
             
             if (currentNode.type === 'desvio') {
                 runStep();
@@ -520,6 +648,7 @@ function advance(port) {
         
         currentNode = null;
         autoRun = false;
+        updateAutoRunUI(false); 
         renderNodes();
     }
 }
@@ -537,6 +666,7 @@ async function runStep() {
         if (!currentNode) {
             logMsg("O algoritmo exige um bloco de INÍCIO.", "error");
             autoRun = false;
+            updateAutoRunUI(false);
             return;
         }
         
@@ -550,6 +680,11 @@ async function runStep() {
     } else {
         stepCount++;
         document.getElementById('step-counter').innerText = `Passos: ${stepCount}`;
+        
+        if (stepCount > 2000) {
+            throwNodeError(currentNode, "Disjuntor de Segurança: O seu algoritmo ultrapassou 2.000 passos. Verifique se criou um Loop Infinito.");
+            return;
+        }
     }
 
     switch (currentNode.type) {
@@ -564,7 +699,7 @@ async function runStep() {
             if (!inVarName) { throwNodeError(currentNode, "Defina a variável alvo (ex: x)."); return; }
             
             if (!isValidVarName(inVarName)) {
-                throwNodeError(currentNode, `O nome da variável '${inVarName}' é inválido. Regras: Sem espaços, não comece com números e evite caracteres especiais.`);
+                throwNodeError(currentNode, `O nome da variável '${inVarName}' é inválido. Regras: Sem espaços, não comece com números.`);
                 return;
             }
             
@@ -588,7 +723,7 @@ async function runStep() {
                 let procVarName = parts[0].trim(); 
                 
                 if (!isValidVarName(procVarName)) {
-                    throwNodeError(currentNode, `O nome da variável '${procVarName}' à esquerda do '=' é inválido.`);
+                    throwNodeError(currentNode, `O nome da variável '${procVarName}' é inválido.`);
                     return;
                 }
                 
@@ -624,11 +759,13 @@ async function runStep() {
             try {
                 let outVal = evaluateExpr(currentNode.data);
                 logMsg(`<b>SAÍDA: ${outVal}</b>`, "info"); 
-                await showOutput(outVal); 
+                if (!autoRun) {
+                    await showOutput(outVal); 
+                }
                 advance('out');
             } catch (err) { 
                 if (!currentNode.data.includes('"') && !currentNode.data.includes("'")) {
-                    throwNodeError(currentNode, `Erro: Se quer escrever um texto exato, coloque as palavras entre aspas (ex: "${currentNode.data}"). Caso contrário, o sistema procura por uma variável com esse nome.`);
+                    throwNodeError(currentNode, `Erro: Se quer escrever um texto exato, coloque entre aspas (ex: "${currentNode.data}").`);
                 } else {
                     throwNodeError(currentNode, err.message); 
                 }
@@ -641,7 +778,6 @@ async function runStep() {
     }
 }
 
-// --- GUARDA-COSTAS DE SESSÃO (Prevenção de Perda de Dados) ---
 window.addEventListener('beforeunload', function (e) {
     if (nodes.length > 0) {
         const msg = 'Tem a certeza de que pretende sair? O seu projeto não foi guardado.';
