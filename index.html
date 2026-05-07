@@ -13,7 +13,10 @@
     <div id="sidebar">
         <div class="sidebar-header">
             <h3>Lógica Flow</h3>
-            <button onclick="toggleSidebar()" class="close-mobile">X</button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button id="theme-toggle" onclick="toggleTheme()" class="btn-theme" title="Alternar Tema">☀️</button>
+                <button onclick="toggleSidebar()" class="close-mobile">X</button>
+            </div>
         </div>
         
         <button onclick="openHelp()" class="btn-help">❔ Como Usar (Guia)</button>
@@ -77,13 +80,16 @@
 
     <div id="main-content">
         
-        <div id="camera" onpointermove="canvasMove(event)" onpointerup="canvasUp(event)">
-            <div id="connecting-indicator">Conecte à porta azul...</div>
-            <div id="workspace">
-                <svg id="svg-layer"></svg>
-                <svg id="anim-layer"></svg>
-                <div id="nodes-layer"></div>
+        <div id="camera-wrapper">
+            <div id="camera" onpointermove="canvasMove(event)" onpointerup="canvasUp(event)">
+                <div id="workspace">
+                    <svg id="svg-layer"></svg>
+                    <svg id="anim-layer"></svg>
+                    <div id="nodes-layer"></div>
+                </div>
             </div>
+            
+            <div id="connecting-indicator">Conecte à porta azul...</div>
             
             <div id="zoom-controls">
                 <button onclick="changeZoom(-0.1)">-</button>
@@ -94,12 +100,12 @@
         </div>
 
         <div id="bottom-panel">
-            <div class="panel-header">
+            <div class="panel-header" onclick="toggleBottomPanel()">
                 <div class="panel-title">
                     <span>📊 Terminais do Sistema</span>
                     <span id="step-counter" class="step-counter">Passos: 0</span>
                 </div>
-                <button id="btn-toggle-panel" onclick="toggleBottomPanel()">▼ Ocultar</button>
+                <button id="btn-toggle-panel">▼ Ocultar</button>
             </div>
             <div class="panel-body">
                 <div class="monitor-pane memory-pane">
@@ -141,7 +147,7 @@
                 <button onclick="closeHelp()" class="btn-close-help">✖ Fechar (ESC)</button>
             </div>
             
-            <h3 class="help-section-title" style="color: #a6e3a1;">🛠️ Como Funciona o Motor</h3>
+            <h3 class="help-section-title" style="color: var(--accent);">🛠️ Como Funciona o Motor</h3>
             <ul class="help-list">
                 <li><b>Adicionar:</b> Clique em um bloco do menu lateral para colocá-lo na tela.</li>
                 <li><b>Ligar:</b> Clique na porta azul de saída (embaixo) e arraste até a porta de entrada (em cima) de outro bloco.</li>
@@ -150,7 +156,7 @@
                 <li><b>Navegar:</b> Clique no fundo vazio da tela e arraste. Use o ícone 🎯 para recentralizar a câmera.</li>
             </ul>
 
-            <h3 class="help-section-title mt" style="color: #f9e2af;">📘 Dicionário de Blocos</h3>
+            <h3 class="help-section-title mt" style="color: var(--warn);">📘 Dicionário de Blocos</h3>
             <div class="help-grid">
                 <div class="help-card card-inicio"><b>▶ INÍCIO / ⏹ FIM</b><br>Todo algoritmo precisa começar com um INÍCIO e terminar no FIM.</div>
                 <div class="help-card card-leia"><b>⌨️ LEIA (Entrada)</b><br>Pede um valor ao usuário e guarda em uma variável. <i>Ex: idade</i></div>

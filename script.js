@@ -78,9 +78,34 @@ const TEMPLATES = {
 };
 
 window.onload = () => {
+    loadTheme();
     loadLocalBackup();
     centerCamera(); 
 };
+
+// --- GESTÃO DE TEMA (CLARO/ESCURO) ---
+function loadTheme() {
+    const theme = localStorage.getItem('logicaFlow_theme');
+    if (theme === 'light') {
+        document.body.classList.add('light-mode');
+        const btn = document.getElementById('theme-toggle');
+        if(btn) btn.innerText = '🌙';
+    }
+}
+
+function toggleTheme() {
+    const body = document.body;
+    const btn = document.getElementById('theme-toggle');
+    if (body.classList.contains('light-mode')) {
+        body.classList.remove('light-mode');
+        btn.innerText = '☀️';
+        localStorage.setItem('logicaFlow_theme', 'dark');
+    } else {
+        body.classList.add('light-mode');
+        btn.innerText = '🌙';
+        localStorage.setItem('logicaFlow_theme', 'light');
+    }
+}
 
 // --- GESTÃO DO PAINEL INFERIOR (IDE STYLE) ---
 function toggleBottomPanel() {
@@ -96,7 +121,6 @@ function toggleBottomPanel() {
     }
 }
 
-// Quando a execução inicia, garantimos que o painel está aberto para ver o resultado
 function openBottomPanel() {
     const panel = document.getElementById('bottom-panel');
     const btn = document.getElementById('btn-toggle-panel');
@@ -192,7 +216,7 @@ function throwNodeError(node, msg) {
     btnRunAll.disabled = false;
     
     document.body.classList.remove('running');
-    openBottomPanel(); // Garante que o aluno veja o erro
+    openBottomPanel(); 
     renderNodes();
 }
 
