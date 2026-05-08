@@ -143,30 +143,48 @@
     <div id="modal-help" class="modal-overlay">
         <div class="modal-content help-content">
             <div class="help-header">
-                <h2>Guia Rápido de Uso</h2>
+                <h2>🎮 Como Jogar o Lógica Flow</h2>
                 <button onclick="closeHelp()" class="btn-close-help">✖ Fechar (ESC)</button>
             </div>
             
-            <h3 class="help-section-title" style="color: var(--accent);">🛠️ Como Funciona o Motor</h3>
-            <ul class="help-list">
-                <li><b>Adicionar:</b> Clique em um bloco do menu lateral para colocá-lo na tela.</li>
-                <li><b>Ligar:</b> Clique na porta azul de saída (embaixo) e arraste até a porta de entrada (em cima) de outro bloco.</li>
-                <li><b>Apagar Setas:</b> Clique na porta de saída de onde a seta nasce e solte o botão no espaço vazio da tela.</li>
-                <li><b>Apagar Blocos:</b> Passe o mouse sobre o bloco e clique no botão vermelho "✖".</li>
-                <li><b>Navegar:</b> Clique no fundo vazio da tela e arraste. Use o ícone 🎯 para recentralizar a câmera.</li>
-            </ul>
+            <p style="font-size: 14px; margin-top: 0; color: #a6adc8;">Aqui você é o chefe! O computador é como um robô muito rápido, mas ele precisa das suas ordens exatas para funcionar. Siga a regra de três:</p>
 
-            <h3 class="help-section-title mt" style="color: var(--warn);">📘 Dicionário de Blocos</h3>
+            <div class="tutorial-steps-container">
+                <div class="tutorial-step-card">
+                    <div class="step-icon">1</div>
+                    <div class="step-text">
+                        <b>PEGAR:</b> Clique nos blocos do menu lateral para jogá-los na tela. Use o mouse para arrastar e organizá-los.
+                    </div>
+                </div>
+                <div class="tutorial-step-card">
+                    <div class="step-icon">2</div>
+                    <div class="step-text">
+                        <b>LIGAR:</b> Clique na <b>bolinha azul</b> embaixo de um bloco e puxe o fio até o topo do próximo bloco. É assim que o robô sabe o caminho!
+                    </div>
+                </div>
+                <div class="tutorial-step-card">
+                    <div class="step-icon">3</div>
+                    <div class="step-text">
+                        <b>RODAR:</b> Clique no botão verde <b>▶ Executar Tudo</b> e veja a mágica acontecer lá embaixo no Console!
+                    </div>
+                </div>
+            </div>
+
+            <div class="dica-ouro">
+                <b>💡 Dica de Ouro:</b> Errou um fio? Clique na bolinha azul de onde ele nasce e solte no espaço vazio para apagá-lo. Para apagar um bloco, passe o mouse em cima dele e clique no "✖".
+            </div>
+
+            <h3 class="help-section-title mt" style="color: var(--warn);">🧱 O que faz cada bloco?</h3>
             <div class="help-grid">
-                <div class="help-card card-inicio"><b>▶ INÍCIO / ⏹ FIM</b><br>Todo algoritmo precisa começar com um INÍCIO e terminar no FIM.</div>
-                <div class="help-card card-leia"><b>⌨️ LEIA (Entrada)</b><br>Pede um valor ao usuário e guarda em uma variável. <i>Ex: idade</i></div>
-                <div class="help-card card-escreva"><b>🖥️ ESCREVA (Saída)</b><br>Mostra uma variável ou mensagem na tela. Use aspas para texto. <i>Ex: "Olá!"</i></div>
-                <div class="help-card card-processo"><b>⚙️ PROCESSO</b><br>Faz contas e altera o valor das variáveis. <i>Ex: soma = a + b</i></div>
-                <div class="help-card card-decisao"><b>❓ DECISÃO</b><br>Faz uma pergunta lógica <i>(Ex: nota >= 10)</i> e divide o caminho em Verdadeiro (V) ou Falso (F).</div>
-                <div class="help-card card-desvio"><b>⚪ PONTO DE DESVIO</b><br>Serve apenas para curvar setas ou fechar ciclos (loops).</div>
+                <div class="help-card card-inicio"><b>▶ INÍCIO / ⏹ FIM</b><br>Onde o seu robô acorda e onde ele vai dormir. Todo projeto precisa deles!</div>
+                <div class="help-card card-leia"><b>⌨️ LEIA (Entrada)</b><br>O robô te faz uma pergunta e guarda a sua resposta. <i>Ex: idade</i></div>
+                <div class="help-card card-escreva"><b>🖥️ ESCREVA (Saída)</b><br>O robô fala com você na tela! Se quiser que ele fale palavras, use aspas. <i>Ex: "Olá!"</i></div>
+                <div class="help-card card-processo"><b>⚙️ PROCESSO</b><br>O cérebro do robô. Aqui ele faz a matemática e salva na memória. <i>Ex: soma = a + b</i></div>
+                <div class="help-card card-decisao"><b>❓ DECISÃO</b><br>O robô faz um teste <i>(Ex: nota >= 10)</i>. Se for <b>Verdadeiro (V)</b> vai para um lado, se <b>Falso (F)</b> vai para o outro.</div>
+                <div class="help-card card-desvio"><b>⚪ PONTO DE DESVIO</b><br>Serve apenas para fazer o fio fazer uma curva elegante e manter a tela organizada.</div>
             </div>
             
-            <button onclick="closeHelp()" class="btn-exec mt">Começar a Programar!</button>
+            <button onclick="closeHelp()" class="btn-exec mt">Estou pronto. Começar a Programar!</button>
         </div>
     </div>
 
