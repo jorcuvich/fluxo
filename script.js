@@ -602,7 +602,9 @@ function renderSVG() {
     links.forEach(l => {
         let p1 = getPortCoords(l.from, l.port);
         let p2 = getPortCoords(l.to, 'in');
-        let color = l.port === 'T' ? 'var(--accent)' : l.port === 'F' ? 'var(--danger)' : '#555';
+        
+        // Uso da Variável CSS diretamente via SVG Stroke! (Isso ajusta automaticamente a cor quando muda o tema)
+        let color = l.port === 'T' ? 'var(--accent)' : l.port === 'F' ? 'var(--danger)' : 'var(--line-default)';
         let pathData = getOrthogonalPath(p1, p2, l.port);
 
         html += `<path d="${pathData}" stroke="${color}" stroke-width="${strokeW}" fill="none" stroke-linejoin="round"/>`;
@@ -611,7 +613,8 @@ function renderSVG() {
 
     if (tempLine) {
         let p1 = getPortCoords(connectingData.fromId, connectingData.port);
-        html += `<path d="M ${p1.x} ${p1.y} L ${tempLine.x2} ${tempLine.y2}" stroke="#aaa" stroke-width="${strokeW}" stroke-dasharray="5,5" fill="none"/>`;
+        // O fio fantasma (enquanto arrasta) também agora tem cor dinâmica!
+        html += `<path d="M ${p1.x} ${p1.y} L ${tempLine.x2} ${tempLine.y2}" stroke="var(--line-temp)" stroke-width="${strokeW}" stroke-dasharray="5,5" fill="none"/>`;
     }
     svgLayer.innerHTML = html;
 }
@@ -714,7 +717,8 @@ function advance(port) {
         const glow = document.createElementNS("http://www.w3.org/2000/svg", "path");
         glow.setAttribute("d", pathData);
         
-        let color = link.port === 'T' ? 'var(--accent)' : link.port === 'F' ? 'var(--danger)' : '#ffffff';
+        // Uso da Variável CSS para a animação de execução
+        let color = link.port === 'T' ? 'var(--accent)' : link.port === 'F' ? 'var(--danger)' : 'var(--line-glow)';
         
         glow.setAttribute("stroke", color);
         glow.setAttribute("stroke-width", Math.max(4, 6 / currentZoom));
