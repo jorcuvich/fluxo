@@ -3,6 +3,7 @@
 Simulador educacional de fluxogramas para o ensino de lógica de programação e Pensamento Computacional. Desenvolvido com HTML, CSS e JavaScript puros, sem dependências externas, rodando inteiramente no navegador — sem necessidade de instalação.
 
 **Acesse a versão online:** [conicas.com.br/fluxo](https://conicas.com.br/fluxo/)
+**Manual completo do usuário:** [`help/manual.html`](./help/manual.html)
 
 ---
 
@@ -26,23 +27,44 @@ O objetivo é tornar visível e manipulável algo que, no ensino tradicional de 
 
 ## Como usar
 
-1. Acesse [conicas.com.br/fluxo](https://conicas.com.br/fluxo/) diretamente no navegador — não é necessário instalar nada.
-2. Clique em **❔ Como Usar (Guia)** para uma introdução rápida aos blocos e à lógica de construção.
+1. Acesse [conicas.com.br/fluxo](https://conicas.com.br/fluxo/) diretamente no navegador, não é necessário instalar nada.
+2. Clique em **❔ Como Usar (Guia)** para uma introdução rápida aos blocos e à lógica de construção, ou consulte o [manual completo](./help/manual.html) para uma referência detalhada de cada funcionalidade.
 3. Arraste os blocos do menu lateral para a área de trabalho e conecte-os pelas portas azuis.
 4. Use **▶ Executar Tudo** para rodar o algoritmo completo, ou **Passo a Passo ➡** para acompanhar a execução em detalhe, observando o painel de Memória RAM e o Console.
 5. Para começar mais rápido, escolha um exemplo pronto em **📚 Galeria de Projetos** e clique em **Carregar Modelo**.
 
+## Documentação
+
+| Documento | Conteúdo |
+|---|---|
+| [`help/manual.html`](./help/manual.html) | Manual completo: cada bloco, execução passo a passo, painéis de memória e console, galeria de exemplos, exemplo guiado (par ou ímpar) e dúvidas frequentes. |
+| Guia integrado (dentro do app) | Introdução rápida aos blocos, acessível pelo botão **❔ Como Usar (Guia)**. |
+
 ## Contexto de aplicação
 
-O Lógica Flow já foi aplicado em contexto real de ensino, em turma de Ensino Técnico Integrado em Desenvolvimento de Sistemas, na atividade de implementação da fórmula de Bhaskara. A aplicação permitiu observar, entre outros aspectos, padrões de erro conceitual dos estudantes durante a construção do algoritmo — evidência que vem orientando o refinamento contínuo da ferramenta.
+O Lógica Flow já foi aplicado em contexto real de ensino, em turma de Ensino Técnico Integrado em Desenvolvimento de Sistemas, na atividade de implementação da fórmula de Bhaskara. A aplicação permitiu observar, entre outros aspectos, padrões de erro conceitual dos estudantes durante a construção do algoritmo, evidência que vem orientando o refinamento contínuo da ferramenta.
 
 ## Tecnologia
 
-- HTML, CSS e JavaScript puros — sem frameworks ou dependências externas.
+- HTML, CSS e JavaScript puros, sem frameworks ou dependências externas.
 - Aproximadamente 1200 linhas de código.
 - Executa inteiramente no navegador, sem backend ou instalação.
 
+## Estrutura do repositório
+
+```
+fluxo/
+├── index.html        # aplicação principal
+├── style.css          # estilos do simulador
+├── script.js          # lógica de construção e execução dos fluxogramas
+├── help/
+│   └── manual.html    # manual completo do usuário
+├── LICENSE
+└── README.md
+```
+
 ## Autoria
+
 
 Desenvolvido por **Wagner Jorcuvich**.
 
