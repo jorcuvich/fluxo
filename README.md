@@ -44,8 +44,5 @@ O Lógica Flow já foi aplicado em contexto real de ensino, em turma de Ensino T
 
 ## Autoria
 
-Desenvolvido por **Wagner Jorcuvich Nunes da Silva**.
+Desenvolvido por **Wagner Jorcuvich**.
 
-## Licença
-
-Este projeto está licenciado sob os termos descritos no arquivo [LICENSE](./LICENSE).
