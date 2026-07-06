@@ -1,4 +1,4 @@
-let nodes = [];
+let nodes = []; 
 let links = [];
 let variables = {};
 
