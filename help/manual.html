@@ -1,1 +1,717 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lógica Flow — Manual do Usuário</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #10141b;
+    --bg-alt: #161b24;
+    --surface: #1b212c;
+    --surface-2: #222937;
+    --line: #2a3242;
+    --text: #e7ebf3;
+    --text-dim: #9aa5b8;
+    --text-faint: #6b7488;
 
+    --c-terminal: #34d1a6;   /* início / fim */
+    --c-terminal-bg: rgba(52,209,166,0.12);
+    --c-processo: #f2b544;   /* processo */
+    --c-processo-bg: rgba(242,181,68,0.12);
+    --c-decisao: #b48cf2;    /* decisão */
+    --c-decisao-bg: rgba(180,140,242,0.12);
+    --c-entrada: #4fc3f7;    /* leia */
+    --c-entrada-bg: rgba(79,195,247,0.12);
+    --c-saida: #f2748c;      /* escreva */
+    --c-saida-bg: rgba(242,116,140,0.12);
+    --c-desvio: #8b93a7;     /* ponto de desvio */
+    --c-desvio-bg: rgba(139,147,167,0.12);
+
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --radius: 10px;
+    --nav-w: 264px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  a{color:var(--c-entrada);}
+  code, .kbd{font-family:var(--font-mono);}
+
+  code.inline{
+    background:var(--surface-2);
+    padding:2px 6px;
+    border-radius:5px;
+    font-size:0.88em;
+    color:var(--c-terminal);
+    border:1px solid var(--line);
+  }
+
+  /* ---------- layout shell ---------- */
+  .shell{
+    display:flex;
+    min-height:100vh;
+  }
+
+  nav.toc{
+    width:var(--nav-w);
+    flex-shrink:0;
+    background:var(--bg-alt);
+    border-right:1px solid var(--line);
+    padding:28px 20px 40px;
+    position:sticky;
+    top:0;
+    align-self:flex-start;
+    height:100vh;
+    overflow-y:auto;
+  }
+
+  .toc-brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .toc-brand-mark{
+    width:30px;height:30px;flex-shrink:0;
+  }
+  .toc-brand-name{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:17px;
+    letter-spacing:0.01em;
+  }
+  .toc-sub{
+    font-size:12.5px;
+    color:var(--text-faint);
+    margin:0 0 26px;
+  }
+
+  .toc-group{margin-bottom:22px;}
+  .toc-group-label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.09em;
+    color:var(--text-faint);
+    margin:0 0 8px;
+    font-weight:600;
+  }
+  .toc-group ul{list-style:none;margin:0;padding:0;}
+  .toc-group li{margin:0;}
+  .toc-group a{
+    display:block;
+    color:var(--text-dim);
+    text-decoration:none;
+    font-size:13.6px;
+    padding:6px 10px;
+    border-radius:7px;
+    margin-bottom:1px;
+    transition:background .15s ease, color .15s ease;
+  }
+  .toc-group a:hover{background:var(--surface); color:var(--text);}
+
+  .toc-cta{
+    margin-top:10px;
+    display:block;
+    text-align:center;
+    background:var(--c-terminal);
+    color:#0a1712;
+    font-weight:600;
+    font-size:13.5px;
+    padding:11px 14px;
+    border-radius:8px;
+    text-decoration:none;
+  }
+
+  main{
+    flex:1;
+    min-width:0;
+    padding:64px clamp(24px, 6vw, 88px) 120px;
+    max-width:900px;
+  }
+
+  /* ---------- hero ---------- */
+  .hero-eyebrow{
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    color:var(--c-terminal);
+    letter-spacing:0.06em;
+    margin:0 0 14px;
+  }
+  h1.hero-title{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:clamp(34px, 5vw, 50px);
+    line-height:1.08;
+    margin:0 0 18px;
+    letter-spacing:-0.01em;
+  }
+  .hero-lead{
+    font-size:17.5px;
+    color:var(--text-dim);
+    max-width:60ch;
+    margin:0 0 30px;
+  }
+  .hero-actions{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:54px;
+  }
+  .btn{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:14.5px;
+    padding:12px 20px;
+    border-radius:8px;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    border:1px solid var(--line);
+  }
+  .btn-primary{background:var(--c-terminal); color:#0a1712; border-color:transparent;}
+  .btn-ghost{color:var(--text); background:transparent;}
+
+  /* ---------- section chrome ---------- */
+  section.chapter{
+    padding-top:52px;
+    border-top:1px solid var(--line);
+    margin-top:52px;
+  }
+  section.chapter:first-of-type{border-top:none; margin-top:0; padding-top:0;}
+
+  .chapter-num{
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    color:var(--text-faint);
+  }
+  h2.chapter-title{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:28px;
+    margin:6px 0 18px;
+    letter-spacing:-0.005em;
+  }
+  h3{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:19px;
+    margin:34px 0 12px;
+  }
+  p{color:var(--text-dim); margin:0 0 16px; max-width:70ch;}
+  ul, ol{color:var(--text-dim); max-width:68ch; padding-left:22px;}
+  li{margin-bottom:8px;}
+  strong{color:var(--text); font-weight:600;}
+
+  /* ---------- block cards (matches in-app color coding) ---------- */
+  .block-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(240px,1fr));
+    gap:14px;
+    margin:22px 0 8px;
+  }
+  .block-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-left:3px solid var(--card-color, var(--c-terminal));
+    border-radius:var(--radius);
+    padding:16px 18px;
+  }
+  .block-card .tag{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--card-color, var(--c-terminal));
+    background:var(--card-bg, var(--c-terminal-bg));
+    padding:4px 9px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+  .block-card h4{
+    margin:0 0 6px;
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:15px;
+    color:var(--text);
+  }
+  .block-card p{margin:0; font-size:13.8px;}
+  .block-card .ex{
+    display:block;
+    margin-top:9px;
+    font-family:var(--font-mono);
+    font-size:12.3px;
+    color:var(--text-faint);
+  }
+
+  .b-terminal{--card-color:var(--c-terminal); --card-bg:var(--c-terminal-bg);}
+  .b-processo{--card-color:var(--c-processo); --card-bg:var(--c-processo-bg);}
+  .b-decisao{--card-color:var(--c-decisao); --card-bg:var(--c-decisao-bg);}
+  .b-entrada{--card-color:var(--c-entrada); --card-bg:var(--c-entrada-bg);}
+  .b-saida{--card-color:var(--c-saida); --card-bg:var(--c-saida-bg);}
+  .b-desvio{--card-color:var(--c-desvio); --card-bg:var(--c-desvio-bg);}
+
+  /* ---------- step list ---------- */
+  .steps{
+    counter-reset:step;
+    list-style:none;
+    padding:0;
+    margin:22px 0;
+  }
+  .steps li{
+    position:relative;
+    padding:2px 0 22px 42px;
+    border-left:1px solid var(--line);
+    margin-left:15px;
+    margin-bottom:0;
+  }
+  .steps li:last-child{border-color:transparent; padding-bottom:2px;}
+  .steps li::before{
+    counter-increment:step;
+    content:counter(step);
+    position:absolute;
+    left:-15px;
+    top:0;
+    width:30px;height:30px;
+    border-radius:50%;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:var(--font-mono);
+    font-size:13px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .steps h4{margin:0 0 5px; font-family:var(--font-body); font-size:15px; color:var(--text); font-weight:600;}
+  .steps p{margin:0; font-size:14px;}
+
+  /* ---------- callouts ---------- */
+  .callout{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    margin:20px 0;
+    display:flex;
+    gap:12px;
+  }
+  .callout .icon{font-size:18px; line-height:1.3;}
+  .callout p{margin:0; font-size:14px;}
+  .callout.gold{border-color: rgba(242,181,68,0.35); background:var(--c-processo-bg);}
+  .callout.gold p{color:#f0dcb0;}
+
+  /* ---------- shortcut / key table ---------- */
+  table.keys{
+    width:100%;
+    border-collapse:collapse;
+    margin:18px 0 8px;
+    font-size:13.8px;
+  }
+  table.keys th{
+    text-align:left;
+    color:var(--text-faint);
+    font-weight:600;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    padding:0 12px 10px;
+    border-bottom:1px solid var(--line);
+  }
+  table.keys td{
+    padding:12px;
+    border-bottom:1px solid var(--line);
+    color:var(--text-dim);
+  }
+  table.keys tr:last-child td{border-bottom:none;}
+
+  /* ---------- diagram figure ---------- */
+  .figure{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+    margin:24px 0;
+  }
+  .figure figcaption{
+    margin-top:14px;
+    font-size:13px;
+    color:var(--text-faint);
+    text-align:center;
+  }
+
+  /* ---------- faq ---------- */
+  details.faq{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:4px 18px;
+    margin-bottom:10px;
+  }
+  details.faq summary{
+    cursor:pointer;
+    padding:14px 0;
+    font-weight:600;
+    font-size:14.5px;
+    color:var(--text);
+    list-style:none;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  details.faq summary::-webkit-details-marker{display:none;}
+  details.faq summary::after{
+    content:"+";
+    font-family:var(--font-mono);
+    color:var(--text-faint);
+    font-size:18px;
+  }
+  details.faq[open] summary::after{content:"–";}
+  details.faq p{padding-bottom:16px; margin:0; font-size:14px;}
+
+  footer{
+    border-top:1px solid var(--line);
+    margin-top:70px;
+    padding-top:28px;
+    color:var(--text-faint);
+    font-size:13px;
+  }
+
+  /* ---------- mobile ---------- */
+  .toc-toggle{display:none;}
+  @media (max-width: 880px){
+    .shell{display:block;}
+    nav.toc{
+      position:sticky;
+      height:auto;
+      width:100%;
+      top:0;
+      z-index:20;
+      padding:16px 20px;
+    }
+    nav.toc .toc-groups{
+      display:none;
+    }
+    nav.toc.open .toc-groups{display:block; margin-top:18px;}
+    .toc-toggle{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      width:100%;
+      background:none;
+      border:none;
+      color:var(--text);
+      font-family:var(--font-body);
+      font-size:14px;
+      cursor:pointer;
+    }
+    main{padding:36px 20px 90px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <nav class="toc" id="tocNav">
+    <div class="toc-brand">
+      <svg class="toc-brand-mark" viewBox="0 0 32 32"><rect x="4" y="3" width="24" height="8" rx="4" fill="#34d1a6"/><polygon points="16,14 27,20 16,26 5,20" fill="#b48cf2"/></svg>
+      <span class="toc-brand-name">Lógica Flow</span>
+    </div>
+    <p class="toc-sub">Manual do Usuário</p>
+
+    <button class="toc-toggle" onclick="document.getElementById('tocNav').classList.toggle('open')">
+      <span>Índice do manual</span><span>☰</span>
+    </button>
+
+    <div class="toc-groups">
+      <div class="toc-group">
+        <p class="toc-group-label">Começando</p>
+        <ul>
+          <li><a href="#introducao">O que é o Lógica Flow</a></li>
+          <li><a href="#primeiros-passos">Primeiros passos</a></li>
+        </ul>
+      </div>
+      <div class="toc-group">
+        <p class="toc-group-label">Referência dos blocos</p>
+        <ul>
+          <li><a href="#os-blocos">Os seis blocos</a></li>
+          <li><a href="#conectando">Conectando blocos</a></li>
+        </ul>
+      </div>
+      <div class="toc-group">
+        <p class="toc-group-label">Execução</p>
+        <ul>
+          <li><a href="#executando">Executando o algoritmo</a></li>
+          <li><a href="#monitores">Memória e Console</a></li>
+          <li><a href="#loop-infinito">Detector de loop infinito</a></li>
+        </ul>
+      </div>
+      <div class="toc-group">
+        <p class="toc-group-label">Trabalhando com projetos</p>
+        <ul>
+          <li><a href="#galeria">Galeria de exemplos</a></li>
+          <li><a href="#salvando">Salvando e abrindo</a></li>
+        </ul>
+      </div>
+      <div class="toc-group">
+        <p class="toc-group-label">Na prática</p>
+        <ul>
+          <li><a href="#exemplo-guiado">Exemplo guiado: par ou ímpar</a></li>
+          <li><a href="#duvidas">Dúvidas frequentes</a></li>
+        </ul>
+      </div>
+      <a class="toc-cta" href="https://conicas.com.br/fluxo/" target="_blank" rel="noopener">Abrir o Lógica Flow ↗</a>
+    </div>
+  </nav>
+
+  <main>
+
+    <p class="hero-eyebrow">MANUAL DO USUÁRIO · V1.0</p>
+    <h1 class="hero-title">Tudo o que você precisa para montar,<br>rodar e entender um algoritmo.</h1>
+    <p class="hero-lead">Este manual explica cada bloco, cada botão e cada engrenagem do Lógica Flow — do primeiro clique até a leitura da memória durante a execução.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="https://conicas.com.br/fluxo/" target="_blank" rel="noopener">Abrir o simulador</a>
+      <a class="btn btn-ghost" href="#primeiros-passos">Começar pelos primeiros passos</a>
+    </div>
+
+    <section class="chapter" id="introducao">
+      <p class="chapter-num">01</p>
+      <h2 class="chapter-title">O que é o Lógica Flow</h2>
+      <p>O Lógica Flow é um simulador de fluxogramas para o ensino de lógica de programação. Em vez de escrever código em uma linguagem de texto, você monta o algoritmo visualmente, encaixando blocos e ligando-os com fios — e então observa, passo a passo, o que o computador faria com essas instruções.</p>
+      <p>A ideia central é tornar visível o que normalmente fica escondido: o caminho que o programa percorre, e o que acontece com cada variável a cada instante da execução.</p>
+      <div class="callout">
+        <span class="icon">🖥️</span>
+        <p>O Lógica Flow roda inteiramente no navegador. Não é necessário instalar nada — basta abrir o link e começar.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="primeiros-passos">
+      <p class="chapter-num">02</p>
+      <h2 class="chapter-title">Primeiros passos</h2>
+      <p>Todo fluxograma no Lógica Flow segue a mesma lógica básica: pegar um bloco, ligar ao anterior, e repetir até formar o caminho completo do início ao fim.</p>
+      <ol class="steps">
+        <li>
+          <h4>Pegar um bloco</h4>
+          <p>Clique em qualquer botão do menu lateral (por exemplo, <strong>▶ INÍCIO</strong>) para adicioná-lo à área de trabalho. Arraste-o para reorganizar a posição.</p>
+        </li>
+        <li>
+          <h4>Ligar os blocos</h4>
+          <p>Clique na <strong>bolinha azul</strong> na parte de baixo de um bloco e arraste até o topo do próximo. Essa conexão é o que define o caminho que a execução vai seguir.</p>
+        </li>
+        <li>
+          <h4>Montar o restante do fluxo</h4>
+          <p>Repita o processo até ter um caminho completo, sempre começando em <strong>INÍCIO</strong> e terminando em <strong>FIM</strong>.</p>
+        </li>
+        <li>
+          <h4>Executar</h4>
+          <p>Use <strong>▶ Executar Tudo</strong> para rodar tudo de uma vez, ou <strong>Passo a Passo ➡</strong> para acompanhar cada instrução individualmente.</p>
+        </li>
+      </ol>
+      <div class="callout gold">
+        <span class="icon">💡</span>
+        <p><strong>Dica de ouro:</strong> errou uma ligação? Clique na bolinha azul de onde ela nasce e solte em um espaço vazio para apagá-la. Para apagar um bloco inteiro, passe o mouse sobre ele e clique no "✖" que aparece.</p>
+      </div>
+    </section>
+
+    <section class="chapter" id="os-blocos">
+      <p class="chapter-num">03</p>
+      <h2 class="chapter-title">Os seis blocos</h2>
+      <p>Cada bloco representa um tipo de instrução. A cor de cada um se repete em todo o simulador — no menu, na área de trabalho e nos painéis — para que o tipo de instrução seja sempre reconhecível de relance.</p>
+
+      <div class="block-grid">
+        <div class="block-card b-terminal">
+          <span class="tag">▶ ⏹ terminal</span>
+          <h4>Início / Fim</h4>
+          <p>Marcam onde o algoritmo começa e onde termina. Todo fluxograma precisa dos dois — sem eles, a execução não sabe por onde entrar nem quando parar.</p>
+        </div>
+        <div class="block-card b-entrada">
+          <span class="tag">⌨️ entrada</span>
+          <h4>Leia</h4>
+          <p>Pausa a execução e pede um valor para quem está usando o programa, guardando a resposta em uma variável.</p>
+          <span class="ex">leia(idade)</span>
+        </div>
+        <div class="block-card b-saida">
+          <span class="tag">🖥️ saída</span>
+          <h4>Escreva</h4>
+          <p>Exibe um valor ou uma mensagem na tela. Para mostrar texto fixo, use aspas; para mostrar o valor de uma variável, escreva o nome dela sem aspas.</p>
+          <span class="ex">escreva("Olá!")</span>
+        </div>
+        <div class="block-card b-processo">
+          <span class="tag">⚙️ processo</span>
+          <h4>Processo</h4>
+          <p>Onde os cálculos acontecem. Atribui a uma variável o resultado de uma operação matemática.</p>
+          <span class="ex">soma = a + b</span>
+        </div>
+        <div class="block-card b-decisao">
+          <span class="tag">❓ decisão</span>
+          <h4>Decisão</h4>
+          <p>Testa uma condição. Se ela for verdadeira, o fluxo segue por um caminho; se falsa, segue por outro.</p>
+          <span class="ex">nota &gt;= 6</span>
+        </div>
+        <div class="block-card b-desvio">
+          <span class="tag">⚪ desvio</span>
+          <h4>Ponto de desvio</h4>
+          <p>Não executa nenhuma instrução — serve apenas para organizar o desenho do fluxo, permitindo que um fio faça uma curva sem cruzar outros blocos.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="conectando">
+      <h3 id="conectando-h3">Conectando blocos</h3>
+      <p>As ligações entre blocos definem a ordem de execução — não a posição deles na tela. Você pode reorganizar livremente o layout sem alterar o comportamento do algoritmo, desde que as ligações permaneçam as mesmas.</p>
+      <p>O bloco de <strong>Decisão</strong> é o único com duas saídas: uma para o caminho <strong>verdadeiro (V)</strong> e outra para o <strong>falso (F)</strong>. Todos os outros blocos têm apenas uma entrada e uma saída.</p>
+    </section>
+
+    <section class="chapter" id="executando">
+      <p class="chapter-num">04</p>
+      <h2 class="chapter-title">Executando o algoritmo</h2>
+      <p>O motor de execução oferece dois modos, pensados para momentos diferentes de aprendizagem:</p>
+      <h3>Executar tudo</h3>
+      <p>Roda o fluxograma do início ao fim automaticamente, na velocidade escolhida. Bom para ver o resultado final rapidamente.</p>
+      <h3>Passo a passo</h3>
+      <p>Avança uma instrução por vez, a cada clique. É o modo recomendado quando o objetivo é entender <em>por que</em> o programa se comporta de determinada forma — especialmente em blocos de decisão, onde é fácil confundir a ordem entre avaliar a condição e usar o resultado dela.</p>
+      <h3>Velocidade</h3>
+      <p>O seletor de velocidade (1x, 2x, 10x, MAX) controla apenas o modo "Executar Tudo". No modo passo a passo, o ritmo é sempre definido pelos seus próprios cliques.</p>
+    </section>
+
+    <section class="chapter" id="monitores">
+      <h3>Memória RAM e Console de Execução</h3>
+      <p>Na parte inferior da tela ficam os dois painéis que tornam a execução visível:</p>
+      <ul>
+        <li><strong>Memória RAM</strong> — mostra, em tempo real, o valor atual de cada variável usada no algoritmo. Sempre que um bloco de <strong>Leia</strong> ou <strong>Processo</strong> é executado, o valor correspondente é atualizado aqui.</li>
+        <li><strong>Console de Execução</strong> — mostra as mensagens produzidas pelos blocos de <strong>Escreva</strong>, na ordem em que aparecem durante a execução.</li>
+      </ul>
+      <p>Comparar os dois painéis lado a lado, durante a execução passo a passo, é a forma mais direta de identificar em que ponto exato do algoritmo um erro de lógica acontece.</p>
+    </section>
+
+    <section class="chapter" id="loop-infinito">
+      <h3 id="loop-infinito-h3">Detector de loop infinito</h3>
+      <p>Se o fluxograma contiver um ciclo sem condição de saída, a execução é interrompida automaticamente após <strong>2000 passos</strong>, evitando que o navegador trave. Quando isso acontece, revise a condição do bloco de <strong>Decisão</strong> responsável por encerrar a repetição.</p>
+    </section>
+
+    <section class="chapter" id="galeria">
+      <p class="chapter-num">05</p>
+      <h2 class="chapter-title">Galeria de exemplos</h2>
+      <p>O menu <strong>📚 Galeria de Projetos</strong> traz modelos prontos para carregar com um clique — úteis tanto para começar rapidamente quanto para usar como referência em sala de aula.</p>
+      <table class="keys">
+        <tr><th>Modelo</th><th>O que demonstra</th></tr>
+        <tr><td>Somador Simples</td><td>Leitura de dois valores, um processo de soma, e exibição do resultado — o fluxo mais básico possível.</td></tr>
+        <tr><td>Maior ou Menor</td><td>Uso de um bloco de decisão para comparar dois valores e seguir caminhos diferentes conforme o resultado.</td></tr>
+        <tr><td>Contador (Repetição)</td><td>Como montar um ciclo controlado, com uma condição de parada clara — a estrutura de referência para evitar loops infinitos.</td></tr>
+      </table>
+    </section>
+
+    <section class="chapter" id="salvando">
+      <h3 id="salvando-h3">Salvando e abrindo projetos</h3>
+      <p>Use <strong>💾 Salvar (.json)</strong> para exportar o fluxograma atual como um arquivo, e <strong>📂 Abrir (.json)</strong> para carregar um projeto salvo anteriormente. Isso permite continuar um trabalho em outro momento, ou compartilhar um fluxograma com outra pessoa.</p>
+    </section>
+
+    <section class="chapter" id="exemplo-guiado">
+      <p class="chapter-num">06</p>
+      <h2 class="chapter-title">Exemplo guiado: par ou ímpar</h2>
+      <p>Este exemplo percorre o caminho completo — do bloco inicial à leitura do resultado — usando um problema curto e sem ambiguidade: ler um número e informar se ele é par ou ímpar.</p>
+
+      <figure class="figure">
+        <svg viewBox="0 0 640 460" width="100%" role="img" aria-label="Fluxograma do exemplo par ou ímpar">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M2 1L8 5L2 9" fill="none" stroke="#5b6478" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </marker>
+          </defs>
+
+          <rect x="240" y="14" width="150" height="42" rx="21" fill="#1b212c" stroke="#34d1a6" stroke-width="1.4"/>
+          <text x="315" y="35" text-anchor="middle" dominant-baseline="central" fill="#e7ebf3" font-family="Inter" font-size="13.5" font-weight="600">início</text>
+
+          <line x1="315" y1="56" x2="315" y2="84" stroke="#5b6478" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+          <rect x="235" y="84" width="160" height="42" rx="8" fill="#1b212c" stroke="#4fc3f7" stroke-width="1.4"/>
+          <text x="315" y="105" text-anchor="middle" dominant-baseline="central" fill="#e7ebf3" font-family="JetBrains Mono" font-size="12.5">leia(n)</text>
+
+          <line x1="315" y1="126" x2="315" y2="154" stroke="#5b6478" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+          <polygon points="315,154 400,198 315,242 230,198" fill="#1b212c" stroke="#b48cf2" stroke-width="1.4"/>
+          <text x="315" y="198" text-anchor="middle" dominant-baseline="central" fill="#e7ebf3" font-family="JetBrains Mono" font-size="12">n % 2 == 0</text>
+
+          <text x="175" y="184" text-anchor="middle" fill="#9aa5b8" font-family="Inter" font-size="12.5">V</text>
+          <path d="M230,198 L140,198 L140,272" fill="none" stroke="#5b6478" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+          <text x="460" y="184" text-anchor="middle" fill="#9aa5b8" font-family="Inter" font-size="12.5">F</text>
+          <path d="M400,198 L490,198 L490,272" fill="none" stroke="#5b6478" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+          <rect x="60" y="272" width="160" height="42" rx="8" fill="#1b212c" stroke="#f2748c" stroke-width="1.4"/>
+          <text x="140" y="293" text-anchor="middle" dominant-baseline="central" fill="#e7ebf3" font-family="JetBrains Mono" font-size="12.5">escreva("par")</text>
+
+          <rect x="410" y="272" width="160" height="42" rx="8" fill="#1b212c" stroke="#f2748c" stroke-width="1.4"/>
+          <text x="490" y="293" text-anchor="middle" dominant-baseline="central" fill="#e7ebf3" font-family="JetBrains Mono" font-size="12.5">escreva("ímpar")</text>
+
+          <path d="M140,314 L140,354 L305,354 L305,364" fill="none" stroke="#5b6478" stroke-width="1.6" marker-end="url(#arrow)"/>
+          <path d="M490,314 L490,354 L325,354 L325,364" fill="none" stroke="#5b6478" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+          <rect x="240" y="364" width="150" height="42" rx="21" fill="#1b212c" stroke="#34d1a6" stroke-width="1.4"/>
+          <text x="315" y="385" text-anchor="middle" dominant-baseline="central" fill="#e7ebf3" font-family="Inter" font-size="13.5" font-weight="600">fim</text>
+        </svg>
+        <figcaption>Estrutura montada no Lógica Flow: início → leitura → decisão → saída (em cada ramo) → fim.</figcaption>
+      </figure>
+
+      <ol class="steps">
+        <li><h4>Início e Fim</h4><p>Adicione um bloco <strong>INÍCIO</strong> e um bloco <strong>FIM</strong> na área de trabalho.</p></li>
+        <li><h4>Leia</h4><p>Adicione um bloco <strong>LEIA</strong> entre eles, configurando a variável como <code class="inline">n</code>.</p></li>
+        <li><h4>Decisão</h4><p>Adicione um bloco <strong>DECISÃO</strong> logo após, com a condição <code class="inline">n % 2 == 0</code>.</p></li>
+        <li><h4>Dois caminhos de Escreva</h4><p>No ramo <strong>V</strong>, adicione um bloco <strong>ESCREVA</strong> com o texto <code class="inline">"par"</code>. No ramo <strong>F</strong>, adicione outro com <code class="inline">"ímpar"</code>.</p></li>
+        <li><h4>Ligar ao Fim</h4><p>Conecte a saída dos dois blocos de <strong>ESCREVA</strong> ao bloco <strong>FIM</strong>.</p></li>
+        <li><h4>Executar</h4><p>Rode passo a passo e observe: o painel de <strong>Memória</strong> mostra <code class="inline">n</code> recebendo o valor digitado, e o <strong>Console</strong> mostra a mensagem final — só depois que a decisão foi avaliada.</p></li>
+      </ol>
+    </section>
+
+    <section class="chapter" id="duvidas">
+      <p class="chapter-num">07</p>
+      <h2 class="chapter-title">Dúvidas frequentes</h2>
+
+      <details class="faq">
+        <summary>Não consigo ligar dois blocos. O que estou fazendo errado?</summary>
+        <p>A ligação começa sempre pela <strong>bolinha azul</strong> na parte de baixo do bloco de origem, arrastando até o topo do bloco de destino. Se o cursor soltar fora de uma porta válida, a ligação não se forma — nesse caso, tente novamente com um pouco mais de precisão sobre a bolinha.</p>
+      </details>
+      <details class="faq">
+        <summary>A execução parou sozinha. Por quê?</summary>
+        <p>Provavelmente o detector de loop infinito foi acionado, após 2000 passos sem alcançar o bloco <strong>FIM</strong>. Revise a condição de saída do ciclo no bloco de <strong>Decisão</strong> envolvido.</p>
+      </details>
+      <details class="faq">
+        <summary>Qual a diferença entre um bloco de Processo e um bloco de Escreva?</summary>
+        <p><strong>Processo</strong> calcula e guarda um valor em uma variável, sem mostrar nada na tela. <strong>Escreva</strong> exibe algo no Console, mas não guarda nem calcula nada.</p>
+      </details>
+      <details class="faq">
+        <summary>Posso usar o Lógica Flow sem internet, depois de abrir uma vez?</summary>
+        <p>O simulador é leve e roda inteiramente no navegador, mas a página precisa ser carregada normalmente pela internet na primeira vez, como qualquer site.</p>
+      </details>
+      <details class="faq">
+        <summary>Meu projeto salvo (.json) não abre em outro computador. Por quê?</summary>
+        <p>O arquivo <code class="inline">.json</code> guarda apenas a estrutura do fluxograma, não depende de instalação — confira se o arquivo não foi corrompido ao ser transferido (por exemplo, por e-mail, que às vezes altera a extensão do arquivo).</p>
+      </details>
+    </section>
+
+    <footer>
+      Lógica Flow — Manual do Usuário · Desenvolvido por Wagner Jorcuvich Nunes da Silva
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>
